@@ -1,0 +1,14 @@
+Goal: Using the DevHub's dependency API (https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_extract_dependency_info.htm)
+    allow the user to review a specific package version in the DevHub to determine if that version is "eligible" to be "set as released".
+
+Pseudo Logic
+-- 
+
+
+Flags
+-v, --targetdevhubusername TARGETDEVHUBUSERNAME 
+-u, --targetusername TARGETUSERNAME
+-b, --branch BRANCH
+-p, --package PACKAGE
+
+Either requires a project to be executed from within a project in order to derive and resolve the packageAlias to the 04t version number or 

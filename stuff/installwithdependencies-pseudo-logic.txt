@@ -1,0 +1,7 @@
+Goal: Using the DevHub's dependency API (https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_extract_dependency_info.htm)
+    allow the user to install a package version (package and version number defined by command line arguments) to a scratch/sandbox org
+    and it will also find the dependencies for this package version and install those to the org as well.  the command needs to check
+    the org first to see if it already contains the package version or one of its dependencies.  If that is the case, then it should simply
+    move on to next package to install
+
+Pseudo Logic

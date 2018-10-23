@@ -1,0 +1,36 @@
+> rstk:package:dependencies:manage
+--determine "currentBranch" context
+----derived from the "-b" Flag or assumed to be null
+? Should we prompt the user for a branch flag if nothing is specified?
+--scan the project json
+----what dependencies are currently listed in the project json?
+------capture which packages that we are dealing with and store them in a list -- aka packageDependencies
+--scan the devhub for the versions of the packages present in the project json sorted by package, branch, version number-- aka devHubPackageVersionsByPackageAndBranchMap
+----this map needs to include all versions on "null" branch and "currentBranch"
+--loop through packageDependencies -- index packageDependency
+----loop through devHubPackageVersionsByPackageAndBranchMap -- index devHubPackageVersionBranch
+------find point in map where the packageDependency version number matches the devHubPackageVersionBranch version number
+------is there a version after the current packageDependency version?
+--------if true, then find what latest version is for this branch.
+--------prompt user to update packageDependency version to devHubPackageVersionBranch latest version
+----------if user accepts change, then change working packageDependency version to devHubPackageVersionBranch latest version
+
+Questions
+? When do we capture the need for new dependencies? 
+-- out fo scope.  developer needs to manually add a dependency or maybe that needs to be another command
+? When do we remove a dependency?
+-- out of scope.  developer needs to manually remove dependency
+? Need to account for "devHubPackageVersionBranch latest branch version" option and "devHubPackage latest released version" or simply "package with version LATEST designation"
+
+Flags
+-v, --targetdevhubusername TARGETDEVHUBUSERNAME 
+-u, --targetusername TARGETUSERNAME
+-b, --branch BRANCH
+
+
+Artifact Version Classification Types
+- LATEST RELEASED
+- LATEST BUILD - MASTER
+- LATEST BUILD - CURRENT BRANCH
+- VERSION ID 
+
