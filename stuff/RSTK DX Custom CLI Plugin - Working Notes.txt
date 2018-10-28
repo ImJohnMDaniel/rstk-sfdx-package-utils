@@ -1,0 +1,120 @@
+
+Scenario 1 -- Editing MRP project only.
+	-- Checkout MRP source and setup a feature-scm-branch on the MRP project only
+	-- Create default scratch org for projcet
+	-- Install all dependencies in the Scratch org
+	-- Push MRP source code
+
+              MRP
+               |
+               |
+               |---RSTKCore - v1.1.0.46 -- v1.1 release
+                      |
+                      |
+                      |----ApexCommons - v1.0.0.4 -- v1.0 release
+                      |      |
+                      |------|-----ApexMocks - v1.0.0.2 -- v1.0 release
+                      |
+                      |
+                      |----Force-DI - v1.0.0.4 -- v1.0 release
+
+
+	MRP Project Dependencies listed in sfdx-project.json
+
+	"dependencies" : [
+	    {
+	        "package": "rstk-sfdx-apex-mocks@1.0.0-2",
+	        "package": "rstk-sfdx-apex-commons@1.0.0-4",
+	        "package": "rstk-sfdx-force-di@1.0.0-4",
+	        "package": "rstk-sfdx-rstkcore@1.1.0-46"
+	    }
+	]        
+
+
+	package install command
+
+	sfdx force:package:install --package rstk-sfdx-apex-mocks@1.0.0-2
+
+
+First SFDX Custom CLI Command needed -- "Install All Dependencies"
+
+Basic flow....
+    * Checks org’s current list of packages installed and maintains this list
+    * Cache DevHub’s full list of package versions available — use “—verbose” flag to get branch info
+    * Reviews sfdx-project.json — each packageDirectories — each dependencies
+        * If package is not installed, then install "version specified"
+        * If package is installed, but with lower version requested, then install version requested
+        * If package is installed but version is not on current branch for project, then install version requested
+        * If package is installed and version is higher than requested and version is on same branch as current project, then do nothing.
+    * Installation of “version specified” has to account for possible combinations of:
+        * “package"
+        * "package” and “versionNumber"
+            * In this situation, resolve correct version from DevHub version list cache
+    * When working with aliases, verify that the alias does exist in the sfdx-project.json
+    * Provide ui feedback for each package and version being installed.
+    * Refer to https://github.com/texei/texei-sfdx-plugin — package:dependencies:install command for inspiration
+
+
+
+
+
+
+
+
+
+
+
+Scenario 2 -- Editing MRP project AND ApexCommons project. Feature Branch name is KNDY-1233456 (JIRA TICKET)
+	-- Checkout ApexCommons source setup a feature-scm-branch 
+	-- Create default scratch org for project for ApexCommons (ACScratch)
+	-- Install all dependencies for ApexCommons to ACScratch
+	-- Push ApexCommons source code to ACScratch
+	-- Checkout MRP source and setup a feature-scm-branch 
+	-- Create default scratch org for project for MRP (MRPScratch)
+	-- Install all dependencies for MRP project in the MRPScratch 
+	------ this includes the ApexCommon 1.1.0.LATEST-KNDY-1233456 (v1.1.0 latest build on the KNDY-1233456 branch)
+	-- Push MRP source code to MRPScratch
+
+              MRP - v1.3.x -- v1.3.0.LATEST
+               |
+               |
+               |---RSTKCore - v1.1.0.46 -- v1.1 release
+                      |
+                      |
+                      |----ApexCommons - v1.1.x -- v1.1.0.LATEST
+                      |      |
+                      |------|-----ApexMocks - v1.0.0.2 -- v1.0 release
+                      |
+                      |
+                      |----Force-DI - v1.0.0.4 -- v1.0 release
+
+
+
+
+Scenario 3 -- prep for deployment -- "leveling the version numbers"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              MRP
+               |
+               |
+               |---RSTKCore
+                      |
+                      |
+                      |----ApexCommons
+                      |      |
+                      |------|-----ApexMocks
+                      |
+                      |
+                      |----Force-DI
