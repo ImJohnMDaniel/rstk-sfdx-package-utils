@@ -4,6 +4,7 @@
 ? Should we prompt the user for a branch flag if nothing is specified?
 --scan the project json
 ----what dependencies are currently listed in the project json?
+____________________________________________________________________________________
 ------capture which packages that we are dealing with and store them in a list -- aka packageDependencies
 --scan the devhub for the versions of the packages present in the project json sorted by package, branch, version number-- aka devHubPackageVersionsByPackageAndBranchMap
 ----this map needs to include all versions on "null" branch and "currentBranch"

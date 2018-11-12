@@ -1,0 +1,5 @@
+rm -R node_modules
+rm npm-shrinkwrap.json
+rm oclif.manifest.json
+rm yarn.lock
+rm -R lib

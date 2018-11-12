@@ -1,5 +1,6 @@
-import { core, flags, SfdxCommand } from '@salesforce/command';
-import { watchFile } from 'fs';
+import { core, SfdxCommand } from '@salesforce/command';
+import { AnyJson, JsonArray, JsonMap } from '@salesforce/ts-types';
+// import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 // import { exec } from 'child-process-promise';
 // const exec = require('child-process-promise').exec;
@@ -41,7 +42,7 @@ export default class Install extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  public async run(): Promise<core.AnyJson> {
+  public async run(): Promise<AnyJson> {
 
     const result = { installedPackages: {} };
 
@@ -63,10 +64,10 @@ export default class Install extends SfdxCommand {
     // Getting Package
     const packagesToInstall = [];
 
-    const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
+    const packageDirectories = project.get('packageDirectories') as JsonArray || [];
 
     for (let packageDirectory of packageDirectories) {
-      packageDirectory = packageDirectory as core.JsonMap;
+      packageDirectory = packageDirectory as JsonMap;
       // this.ux.logJson(packageDirectory);
       // let { package: dependencies } = packageDirectory;
       const dependencies = packageDirectory.dependencies || [];
@@ -75,12 +76,12 @@ export default class Install extends SfdxCommand {
       // this.ux.log(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
         this.ux.log(`\nPackage dependencies found for package directory ${packageDirectory.path}`);
-        for (const dependency of (dependencies as core.JsonArray)) {
+        for (const dependency of (dependencies as JsonArray)) {
 
           // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
-          const packageInfo = { } as core.JsonMap;
+          const packageInfo = { } as JsonMap;
 
-          const { package: dependentPackage, versionNumber } = dependency as core.JsonMap;
+          const { package: dependentPackage, versionNumber } = dependency as JsonMap;
           // this.ux.log( dependentPackage );
           packageInfo.dependentPackage = dependentPackage;
 
@@ -124,7 +125,7 @@ export default class Install extends SfdxCommand {
 
       let i = 0;
       for (let packageInfo of packagesToInstall) {
-        packageInfo = packageInfo as core.JsonMap;
+        packageInfo = packageInfo as JsonMap;
 
         // Check to see if this package version has already been installed in the org.
         if (result.installedPackages.hasOwnProperty(packageInfo.packageVersionId)) {
