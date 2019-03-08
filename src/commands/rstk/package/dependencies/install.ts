@@ -3,6 +3,8 @@ import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 // import { exec } from 'child-process-promise';
 // const exec = require('child-process-promise').exec;
+
+// tslint:disable-next-line:no-var-requires
 const spawn = require('child-process-promise').spawn;
 
 const packageIdPrefix = '0Ho';
@@ -214,6 +216,8 @@ export default class Install extends SfdxCommand {
 
       // Query DevHub to get the expected Package2Version
       const conn = this.hubOrg.getConnection();
+
+      // tslint:disable-next-line:no-any
       const resultPackageId = await conn.tooling.query(query) as any;
 
       if (resultPackageId.size === 0) {
