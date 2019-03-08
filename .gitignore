@@ -10,3 +10,8 @@ node_modules
 yarn.lock
 oclif.manifest.json
 npm-shrinkwrap.json
+/.history
+sfdx-project.json
+/sfdx-source
+/.sfdx
+output.json
