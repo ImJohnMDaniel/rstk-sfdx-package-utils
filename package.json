@@ -59,6 +59,7 @@
         "description": "Commands focused on management of SalesforceDX package dependencies"
       }
     },
+    "bin": "sfdx",
     "devPlugins": [
       "@oclif/plugin-help"
     ]
