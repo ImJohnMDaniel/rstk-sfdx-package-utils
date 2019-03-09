@@ -14,27 +14,27 @@ Utilities to better manage SalesforceDX Packages
 <!-- usage -->
 ```sh-session
 $ npm install -g rstk-sfdx-package-utils
-$ rstk-sfdx-package-utils COMMAND
+$ sfdx COMMAND
 running command...
-$ rstk-sfdx-package-utils (-v|--version|version)
-rstk-sfdx-package-utils/0.1.0 darwin-x64 node-v10.7.0
-$ rstk-sfdx-package-utils --help [COMMAND]
+$ sfdx (-v|--version|version)
+rstk-sfdx-package-utils/0.1.0 darwin-x64 node-v8.15.1
+$ sfdx --help [COMMAND]
 USAGE
-  $ rstk-sfdx-package-utils COMMAND
+  $ sfdx COMMAND
 ...
 ```
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`rstk-sfdx-package-utils rstk:package:dependencies:install`](#rstk-sfdx-package-utils-rstkpackagedependenciesinstall)
+* [`sfdx rstk:package:dependencies:install`](#sfdx-rstkpackagedependenciesinstall)
 
-## `rstk-sfdx-package-utils rstk:package:dependencies:install`
+## `sfdx rstk:package:dependencies:install`
 
 Install dependent Packages for a sfdx project
 
 ```
 USAGE
-  $ rstk-sfdx-package-utils rstk:package:dependencies:install
+  $ sfdx rstk:package:dependencies:install
 
 OPTIONS
   -b, --branch=branch                              the package version’s branch
