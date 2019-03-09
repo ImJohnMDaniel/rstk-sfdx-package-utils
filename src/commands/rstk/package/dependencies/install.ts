@@ -1,5 +1,7 @@
 import { core, flags, SfdxCommand } from '@salesforce/command';
-import { watchFile } from 'fs';
+import { SfdxProject } from '@salesforce/core';
+import { JsonArray, JsonMap } from '@salesforce/ts-types';
+// import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 // import { exec } from 'child-process-promise';
 // const exec = require('child-process-promise').exec;
@@ -28,10 +30,10 @@ export default class Install extends SfdxCommand {
   ];
 
   protected static flagsConfig = {
-    installationkeys: { char: 'k', required: false, description: 'installation key for key-protected packages (format is 1:MyPackage1Key 2: 3:MyPackage3Key... to allow some packages without installation key)' },
-    branch: { char: 'b', required: false, description: 'the package version’s branch' },
-    wait: { char: 'w', type: 'number', required: false, description: 'number of minutes to wait for installation status (also used for publishwait). Default is 10' },
-    noprompt: { char: 'r', required: false, type: 'boolean', description: 'allow Remote Site Settings and Content Security Policy websites to send or receive data without confirmation' }
+    installationkeys: flags.string({char: 'k', required: false, description: messages.getMessage('flagInstallationKeysDescription')}),
+    branch: flags.string({char: 'b', required: false, description: messages.getMessage('flagBranchDescription')}),
+    wait: flags.number({char: 'w', required: false, description: messages.getMessage('flagWaitDescription')}),
+    noprompt: flags.boolean({char: 'r', required: false, description: messages.getMessage('flagNopromptDescription')})
   };
 
   // Comment this out if your command does not require an org username
@@ -43,7 +45,8 @@ export default class Install extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  public async run(): Promise<core.AnyJson> {
+  // public async run(): Promise<core.AnyJson> {
+    public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const result = { installedPackages: {} };
 
@@ -51,10 +54,20 @@ export default class Install extends SfdxCommand {
     const username = this.org.getUsername();
 
     // Getting Project config
-    const project = await core.SfdxProjectJson.retrieve<core.SfdxProjectJson>();
+    // const project = await core.SfdxProjectJson.retrieve<core.SfdxProjectJson>();
+    const project = await SfdxProject.resolve();
+    // To read values
+    const resolvedProjectJson = await project.resolveProjectConfig() as JsonMap;
+
+    // Shane's approach from his project's bump.ts file -- https://github.com/mshanemc/shane-sfdx-plugins/blob/master/src/commands/shane/package2/version/bump.ts
+    // const projectFile = await this.project.retrieveSfdxProjectJson(false);
+    // const project = JSON.parse(fs.readFileSync(projectFile.getPath(), 'UTF-8'));
 
     // Getting a list of alias
-    const packageAliases = project.get('packageAliases') || {};
+    // const packageAliases = project.get('packageAliases') || {};
+    // const packageAliases = resolvedProjectJson.get('packageAliases') || {};
+    const packageAliases = resolvedProjectJson.packageAliases || {} as JsonMap;
+
     if (typeof packageAliases !== undefined ) {
 
       Object.entries(packageAliases).forEach(([key, value]) => {
@@ -65,10 +78,13 @@ export default class Install extends SfdxCommand {
     // Getting Package
     const packagesToInstall = [];
 
-    const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
+    // const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
+    const packageDirectories = resolvedProjectJson.packageDirectories || {} as JsonArray;
 
-    for (let packageDirectory of packageDirectories) {
-      packageDirectory = packageDirectory as core.JsonMap;
+    Object.entries(packageDirectories).forEach(async ([key, value]) => {
+    // for (let packageDirectory of packageDirectories) {
+      // packageDirectory = packageDirectory as core.JsonMap;
+      const packageDirectory = value as JsonMap;
       // this.ux.logJson(packageDirectory);
       // let { package: dependencies } = packageDirectory;
       const dependencies = packageDirectory.dependencies || [];
@@ -77,12 +93,12 @@ export default class Install extends SfdxCommand {
       // this.ux.log(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
         this.ux.log(`\nPackage dependencies found for package directory ${packageDirectory.path}`);
-        for (const dependency of (dependencies as core.JsonArray)) {
+        for (const dependency of (dependencies as JsonArray)) {
 
           // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
-          const packageInfo = { } as core.JsonMap;
+          const packageInfo = { } as JsonMap;
 
-          const { package: dependentPackage, versionNumber } = dependency as core.JsonMap;
+          const { package: dependentPackage, versionNumber } = dependency as JsonMap;
           // this.ux.log( dependentPackage );
           packageInfo.dependentPackage = dependentPackage;
 
@@ -98,8 +114,9 @@ export default class Install extends SfdxCommand {
         }
       } else {
         this.ux.log(`\nNo dependencies found for package directory ${packageDirectory.path}`);
-      }
-    }
+       }
+    });
+    // }
 
     if (packagesToInstall.length > 0) { // Installing Packages
 
@@ -126,7 +143,7 @@ export default class Install extends SfdxCommand {
 
       let i = 0;
       for (let packageInfo of packagesToInstall) {
-        packageInfo = packageInfo as core.JsonMap;
+        packageInfo = packageInfo as JsonMap;
 
         // Check to see if this package version has already been installed in the org.
         if (result.installedPackages.hasOwnProperty(packageInfo.packageVersionId)) {
