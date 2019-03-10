@@ -25,9 +25,7 @@ export default class Install extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
-  public static examples = [
-    '$ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"'
-  ];
+  public static examples = [messages.getMessage('examplesDescription')];
 
   protected static flagsConfig = {
     installationkeys: flags.string({char: 'k', required: false, description: messages.getMessage('flagInstallationKeysDescription')}),
@@ -46,7 +44,7 @@ export default class Install extends SfdxCommand {
   protected static requiresProject = true;
 
   // public async run(): Promise<core.AnyJson> {
-    public async run(): Promise<any> { // tslint:disable-line:no-any
+  public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const result = { installedPackages: {} };
 
