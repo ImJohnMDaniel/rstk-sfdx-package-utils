@@ -47,6 +47,7 @@ export default class Install extends SfdxCommand {
   public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const result = { installedPackages: {} };
+    // await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org);
 
     // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
     const username = this.org.getUsername();
@@ -90,7 +91,7 @@ export default class Install extends SfdxCommand {
       // TODO: Move all labels to message
       // this.ux.log(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
-        this.ux.log(`\nPackage dependencies found for package directory ${packageDirectory.path}`);
+        this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound').replace('{0}', packageDirectory.path.toString()) );
         for (const dependency of (dependencies as JsonArray)) {
 
           // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
@@ -111,7 +112,7 @@ export default class Install extends SfdxCommand {
           this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         }
       } else {
-        this.ux.log(`\nNo dependencies found for package directory ${packageDirectory.path}`);
+        this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound').replace('{0}', packageDirectory.path.toString()) );
        }
     });
     // }
@@ -132,7 +133,7 @@ export default class Install extends SfdxCommand {
             installationKeys[keyIndex] = key.substring(2);
           } else {
             // Format is not correct, throw an error
-            throw new core.SfdxError('Installation Key should have this format: 1:MyPackage1Key 2: 3:MyPackage3Key');
+            throw new core.SfdxError( messages.getMessage('errorInstallationKeyFormat') );
           }
         }
       }
