@@ -1,16 +1,19 @@
 import { core, flags, SfdxCommand } from '@salesforce/command';
-import { SfdxProject } from '@salesforce/core';
 import { JsonArray, JsonMap } from '@salesforce/ts-types';
+import * as _ from 'lodash';
+import devHubService = require('../../../../shared/devhubService');
+import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 // import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 // import { exec } from 'child-process-promise';
 // const exec = require('child-process-promise').exec;
 
 // tslint:disable-next-line:no-var-requires
-const spawn = require('child-process-promise').spawn;
+// const spawn = require('child-process-promise').spawn;
 
-const packageIdPrefix = '0Ho';
-const packageVersionIdPrefix = '04t';
+// const packageIdPrefix = '0Ho';
+// const packageVersionIdPrefix = '04t';
+
 const packageAliasesMap = [];
 const defaultWait = 10;
 
@@ -47,16 +50,12 @@ export default class Install extends SfdxCommand {
   public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const result = { installedPackages: {} };
-    // await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org);
 
-    // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-    const username = this.org.getUsername();
+    const packageVersionsAlreadyInstalled = await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org, this.ux);
 
     // Getting Project config
-    // const project = await core.SfdxProjectJson.retrieve<core.SfdxProjectJson>();
-    const project = await SfdxProject.resolve();
-    // To read values
-    const resolvedProjectJson = await project.resolveProjectConfig() as JsonMap;
+    const projectJson = await this.project.retrieveSfdxProjectJson();
+    // this.ux.logJson(projectJson);
 
     // Shane's approach from his project's bump.ts file -- https://github.com/mshanemc/shane-sfdx-plugins/blob/master/src/commands/shane/package2/version/bump.ts
     // const projectFile = await this.project.retrieveSfdxProjectJson(false);
@@ -65,56 +64,73 @@ export default class Install extends SfdxCommand {
     // Getting a list of alias
     // const packageAliases = project.get('packageAliases') || {};
     // const packageAliases = resolvedProjectJson.get('packageAliases') || {};
-    const packageAliases = resolvedProjectJson.packageAliases || {} as JsonMap;
+    // const packageAliases = {}; // resolvedProjectJson.packageAliases || {} as JsonMap;
+    const packageAliases = _.get(projectJson['contents'], 'packageAliases');
+    this.ux.logJson(packageAliases);
+//    this.ux.logJson(packageAliases['rstk-sfdx-ref-apex-common']);
 
     if (typeof packageAliases !== undefined ) {
-
       Object.entries(packageAliases).forEach(([key, value]) => {
         packageAliasesMap[key] = value;
       });
     }
+    this.ux.log(`Found ${packageAliasesMap.length} aliases`);
 
     // Getting Package
     const packagesToInstall = [];
 
     // const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
-    const packageDirectories = resolvedProjectJson.packageDirectories || {} as JsonArray;
+    // const packageDirectories = []; // resolvedProjectJson.packageDirectories as JsonArray || [];
+    const packageDirectories =  _.get(projectJson['contents'], 'packageDirectories');
+    // this.ux.logJson(packageDirectories);
 
-    Object.entries(packageDirectories).forEach(async ([key, value]) => {
-    // for (let packageDirectory of packageDirectories) {
-      // packageDirectory = packageDirectory as core.JsonMap;
-      const packageDirectory = value as JsonMap;
+    // Object.entries(packageDirectories).forEach(async ([key, value]) => {  // using this construct causes things to execute non-synchrounously
+    for (let packageDirectory of packageDirectories) {
+      packageDirectory = packageDirectory as JsonMap;
+      // const packageDirectory = value as JsonMap;
       // this.ux.logJson(packageDirectory);
       // let { package: dependencies } = packageDirectory;
-      const dependencies = packageDirectory.dependencies || [];
+      const dependencies = (packageDirectory.dependencies || []) as JsonArray;
 
       // TODO: Move all labels to message
-      // this.ux.log(dependencies);
+//      this.ux.logJson(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
-        this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound').replace('{0}', packageDirectory.path.toString()) );
-        for (const dependency of (dependencies as JsonArray)) {
+        this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound', [packageDirectory.path.toString()]));
 
+        for (const dependency of dependencies ) {
+          // this.ux.log('Here');
           // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
           const packageInfo = { } as JsonMap;
 
           const { package: dependentPackage, versionNumber } = dependency as JsonMap;
-          // this.ux.log( dependentPackage );
+          // this.ux.log( 'dependentPackage == ' + JSON.stringify(dependentPackage) );
           packageInfo.dependentPackage = dependentPackage;
 
-          // this.ux.log( versionNumber );
+          if (versionNumber !== 'undefined') {
+            // this.ux.log( 'versionNumber == ' + JSON.stringify(versionNumber) );
+          }
           packageInfo.versionNumber = versionNumber;
 
-          const packageVersionId = await this.getPackageVersionId(dependentPackage, versionNumber);
-          // this.ux.log(packageVersionId);
-          packageInfo.packageVersionId = packageVersionId;
+          // this.getPackageVersionId(dependentPackage, versionNumber)
+          //       // tslint:disable-next-line:no-shadowed-variable
+          //       .then(result => {
+          //         this.ux.log('Am I getting here?');
+          //         this.ux.log(`packageVersionId == ${result}`);
+          //         packageInfo.packageVersionId = result;
+          //         packagesToInstall.push( packageInfo );
+          //         this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
+          //       }
+          // );
+
+          packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
 
           packagesToInstall.push( packageInfo );
-          this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
+          // this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         }
       } else {
-        this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound').replace('{0}', packageDirectory.path.toString()) );
+        // this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound', [packageDirectory.path.toString()]));
        }
-    });
+    }
     // }
 
     if (packagesToInstall.length > 0) { // Installing Packages
@@ -138,7 +154,7 @@ export default class Install extends SfdxCommand {
         }
       }
 
-      this.ux.log('\n');
+      // this.ux.log('\n');
 
       let i = 0;
       for (let packageInfo of packagesToInstall) {
@@ -146,7 +162,7 @@ export default class Install extends SfdxCommand {
 
         // Check to see if this package version has already been installed in the org.
         if (result.installedPackages.hasOwnProperty(packageInfo.packageVersionId)) {
-          this.ux.log(`PackageVersionId ${packageInfo.packageVersionId} already installed. Skipping...`);
+//          this.ux.log(`PackageVersionId ${packageInfo.packageVersionId} already installed. Skipping...`);
           continue;
         }
 
@@ -156,7 +172,7 @@ export default class Install extends SfdxCommand {
 
         // USERNAME
         args.push('--targetusername');
-        args.push(`${username}`);
+        args.push(`${this.org.getUsername()}`);
 
         // PACKAGE ID
         args.push('--package');
@@ -183,7 +199,7 @@ export default class Install extends SfdxCommand {
         // INSTALL PACKAGE
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
-        await spawn('sfdx', args, { stdio: 'inherit' });
+        // await spawn('sfdx', args, { stdio: 'inherit' });
 
         this.ux.log('\n');
 
@@ -196,55 +212,56 @@ export default class Install extends SfdxCommand {
     return { message: result };
   }
 
-  private async getPackageVersionId(name, version) {
+  // private async getPackageVersionId(name, version) {
 
-    let packageId = messages.getMessage('invalidPackageName');
-    // Keeping original name so that it can be used in error message if needed
-    let packageName = name;
+  //   let packageId = messages.getMessage('invalidPackageName');
+  //   // Keeping original name so that it can be used in error message if needed
+  //   let packageName = name;
 
-    // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
-    // First look if it's an alias
-    if (typeof packageAliasesMap[packageName] !== 'undefined') {
-      packageName = packageAliasesMap[packageName];
-    }
+  //   // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
+  //   // First look if it's an alias
+  //   if (typeof packageAliasesMap[packageName] !== 'undefined') {
+  //     packageName = packageAliasesMap[packageName];
+  //   }
 
-    if (packageName.startsWith(packageVersionIdPrefix)) {
-      // Package2VersionId is set directly
-      packageId = packageName;
-    } else if (packageName.startsWith(packageIdPrefix)) {
-      // Get Package version id from package + versionNumber
-      const vers = version.split('.');
-      let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
-      query += 'from Package2Version ';
-      query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} and MinorVersion=${vers[1]} and PatchVersion=${vers[2]} `;
+  //   if (packageName.startsWith(packageVersionIdPrefix)) {
+  //     // Package2VersionId is set directly
+  //     packageId = packageName;
+  // //    } else if (packageName.startsWith(packageIdPrefix)) {
+  //   } else if (packageName.startsWith(Constants.PACKAGE_ID_PREFIX)) {
+  //     // Get Package version id from package + versionNumber
+  //     const vers = version.split('.');
+  //     let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
+  //     query += 'from Package2Version ';
+  //     query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} and MinorVersion=${vers[1]} and PatchVersion=${vers[2]} `;
 
-      // If Build Number isn't set to LATEST, look for the exact Package Version
-      if (vers[3] !== 'LATEST') {
-        query += `and BuildNumber=${vers[3]} `;
-      }
+  //     // If Build Number isn't set to LATEST, look for the exact Package Version
+  //     if (vers[3] !== 'LATEST') {
+  //       query += `and BuildNumber=${vers[3]} `;
+  //     }
 
-      // If Branch is specified, use it to filter
-      if (this.flags.branch) {
-        query += `and Branch='${this.flags.branch.trim()}' `;
-      }
+  //     // If Branch is specified, use it to filter
+  //     if (this.flags.branch) {
+  //       query += `and Branch='${this.flags.branch.trim()}' `;
+  //     }
 
-      query += 'ORDER BY BuildNumber DESC Limit 1';
+  //     query += 'ORDER BY BuildNumber DESC Limit 1';
 
-      // Query DevHub to get the expected Package2Version
-      const conn = this.hubOrg.getConnection();
+  //     // Query DevHub to get the expected Package2Version
+  //     const conn = this.hubOrg.getConnection();
 
-      // tslint:disable-next-line:no-any
-      const resultPackageId = await conn.tooling.query(query) as any;
+  //     // tslint:disable-next-line:no-any
+  //     const resultPackageId = await conn.tooling.query(query) as any;
 
-      if (resultPackageId.size === 0) {
-        // Query returned no result
-        const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
-        throw new core.SfdxError(errorMessage);
-      } else {
-        packageId = resultPackageId.records[0].SubscriberPackageVersionId;
-      }
-    }
+  //     if (resultPackageId.size === 0) {
+  //       // Query returned no result
+  //       const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
+  //       throw new core.SfdxError(errorMessage);
+  //     } else {
+  //       packageId = resultPackageId.records[0].SubscriberPackageVersionId;
+  //     }
+  //   }
 
-    return packageId;
-  }
+  //   return packageId;
+  // }
 }
