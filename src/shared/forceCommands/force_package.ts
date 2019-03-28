@@ -3,7 +3,7 @@ import { Org } from '@salesforce/core';
 import child_process = require('child_process');
 import * as _ from 'lodash';
 import util = require('util');
-import { PackageVersions } from '../../types/package_version';
+import { PackageVersion } from '../../types/package_version';
 
 const exec = util.promisify(child_process.exec);
 
@@ -29,7 +29,10 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
     // console.log(installedListCallResult.stdout);
     // const installedPackageListJson = JSON.parse(installedListCallResult.stdout);
 
-    return JSON.parse(installedListCallResult.stdout) as PackageVersions;
+    thisUx.stopSpinner();
+
+    // return JSON.parse(installedListCallResult.stdout).result as PackageVersions;
+    return JSON.parse(installedListCallResult.stdout).result as PackageVersion[];
 
     // console.log(installedPackageListJson.result);
     // const thePackageVersionList = installedPackageListJson.result as PackageVersion[];

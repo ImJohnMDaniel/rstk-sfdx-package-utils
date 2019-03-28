@@ -1,10 +1,13 @@
 import { core, flags, SfdxCommand } from '@salesforce/command';
 import { JsonArray, JsonMap } from '@salesforce/ts-types';
+import child_process = require('child_process');
 import * as _ from 'lodash';
+import util = require('util');
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 // import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
+const exec = util.promisify(child_process.exec);
 // import { exec } from 'child-process-promise';
 // const exec = require('child-process-promise').exec;
 
@@ -14,7 +17,8 @@ import forcePackageCommand = require('../../../../shared/forceCommands/force_pac
 // const packageIdPrefix = '0Ho';
 // const packageVersionIdPrefix = '04t';
 
-const packageAliasesMap = [];
+// const packageAliasesMap = [];
+const packageAliasesMap = { } as JsonMap;
 const defaultWait = 10;
 
 // Initialize Messages with the current plugin directory
@@ -50,6 +54,8 @@ export default class Install extends SfdxCommand {
   public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const result = { installedPackages: {} };
+    const packagesInstalled = { };
+    const packagesNotInstalled = {};
 
     const packageVersionsAlreadyInstalled = await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org, this.ux);
 
@@ -57,30 +63,36 @@ export default class Install extends SfdxCommand {
     const projectJson = await this.project.retrieveSfdxProjectJson();
     // this.ux.logJson(projectJson);
 
-    // Shane's approach from his project's bump.ts file -- https://github.com/mshanemc/shane-sfdx-plugins/blob/master/src/commands/shane/package2/version/bump.ts
-    // const projectFile = await this.project.retrieveSfdxProjectJson(false);
-    // const project = JSON.parse(fs.readFileSync(projectFile.getPath(), 'UTF-8'));
-
     // Getting a list of alias
-    // const packageAliases = project.get('packageAliases') || {};
-    // const packageAliases = resolvedProjectJson.get('packageAliases') || {};
-    // const packageAliases = {}; // resolvedProjectJson.packageAliases || {} as JsonMap;
     const packageAliases = _.get(projectJson['contents'], 'packageAliases');
-    this.ux.logJson(packageAliases);
-//    this.ux.logJson(packageAliases['rstk-sfdx-ref-apex-common']);
+//    this.ux.logJson(packageAliases);
+    // this.ux.logJson(packageAliases['rstk-sfdx-ref-apex-common']);
 
-    if (typeof packageAliases !== undefined ) {
-      Object.entries(packageAliases).forEach(([key, value]) => {
-        packageAliasesMap[key] = value;
-      });
-    }
-    this.ux.log(`Found ${packageAliasesMap.length} aliases`);
+    // if (typeof packageAliases !== undefined ) {
+    //   this.ux.log('in the packageAliases section');
+    //   // Object.entries(packageAliases).forEach(([key, value]) => {
+    //   //   packageAliasesMap[key] = value;
+    //   // });
+    //   // packageAliases.
+    const aliasKeys = Object.keys(packageAliases);
+    //   // this.ux.log(aliases);
+    //   // console.log(aliasKeys);
 
-    // Getting Package
+    //   for (const aliasKey of aliasKeys) {
+    //     // packageAlias = packageAlias as JsonMap;
+    //     // this.ux.log(aliasKey);
+    //     // this.ux.log(packageAliases[aliasKey]);
+    //     packageAliasesMap[aliasKey] = packageAliases[aliasKey];
+    //   }
+    //   this.ux.logJson(packageAliasesMap);
+
+    //   // this.ux.log(`Found ${packageAliasesMap.length} aliases`);
+    //   this.ux.log(`Found ${Object.keys(packageAliases).length} aliases`);
+    //   this.ux.log(`Found ${Object.keys(packageAliasesMap).length} aliases`);
+    // }
+
     const packagesToInstall = [];
 
-    // const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
-    // const packageDirectories = []; // resolvedProjectJson.packageDirectories as JsonArray || [];
     const packageDirectories =  _.get(projectJson['contents'], 'packageDirectories');
     // this.ux.logJson(packageDirectories);
 
@@ -93,9 +105,10 @@ export default class Install extends SfdxCommand {
       const dependencies = (packageDirectory.dependencies || []) as JsonArray;
 
       // TODO: Move all labels to message
-//      this.ux.logJson(dependencies);
+      // this.ux.logJson(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
         this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound', [packageDirectory.path.toString()]));
+        // this.ux.logJson(dependencies);
 
         for (const dependency of dependencies ) {
           // this.ux.log('Here');
@@ -106,32 +119,34 @@ export default class Install extends SfdxCommand {
           // this.ux.log( 'dependentPackage == ' + JSON.stringify(dependentPackage) );
           packageInfo.dependentPackage = dependentPackage;
 
-          if (versionNumber !== 'undefined') {
-            // this.ux.log( 'versionNumber == ' + JSON.stringify(versionNumber) );
-          }
+          // debug info about versionNumber
+          // if (versionNumber !== 'undefined') {
+          //   this.ux.log( 'versionNumber == ' + JSON.stringify(versionNumber) );
+          // }
           packageInfo.versionNumber = versionNumber;
 
-          // this.getPackageVersionId(dependentPackage, versionNumber)
-          //       // tslint:disable-next-line:no-shadowed-variable
-          //       .then(result => {
-          //         this.ux.log('Am I getting here?');
-          //         this.ux.log(`packageVersionId == ${result}`);
-          //         packageInfo.packageVersionId = result;
-          //         packagesToInstall.push( packageInfo );
-          //         this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
-          //       }
-          // );
+          //  if versionNumber is undefined and dependentPackage is a packageAlias, then the alias should return the package version 04t id 
+          //  if that is the case, then there is no need to get teh debHubServier to resolve the package version id
+          // is the dependentPackage an alias?
+          const matched = aliasKeys.find( item => item === dependentPackage);
+          if ( matched ) {
+            // the dependentPackage is a packageAlias
+            packageInfo.packageVersionId = packageAliases[matched];
+            // this.ux.log(packageAliases[matched]);
+          } else {
+            // find the packageVersionId from the DevHub
+            packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+          }
+          packagesToInstall.push(packageInfo);
 
-          packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
-
-          packagesToInstall.push( packageInfo );
-          // this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
+          this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         }
       } else {
-        // this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound', [packageDirectory.path.toString()]));
+         this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound', [packageDirectory.path.toString()]));
        }
     }
     // }
+    this.ux.log('\n');
 
     if (packagesToInstall.length > 0) { // Installing Packages
 
@@ -155,19 +170,42 @@ export default class Install extends SfdxCommand {
       }
 
       // this.ux.log('\n');
+      // this.ux.log(`The size of the packageVersionsAlreadyInstalled list is ${packageVersionsAlreadyInstalled.length}`);
+      // this.ux.log('\n');
+      // console.log(packageVersionsAlreadyInstalled);
+      // this.ux.log('\n');
+      this.ux.log('Beginning installs of packages...');
 
       let i = 0;
       for (let packageInfo of packagesToInstall) {
         packageInfo = packageInfo as JsonMap;
 
         // Check to see if this package version has already been installed in the org.
-        if (result.installedPackages.hasOwnProperty(packageInfo.packageVersionId)) {
-//          this.ux.log(`PackageVersionId ${packageInfo.packageVersionId} already installed. Skipping...`);
+        const matchedAlreadyInstalled = packageVersionsAlreadyInstalled.find( item => item.SubscriberPackageVersionId === packageInfo.packageVersionId );
+
+        if ( matchedAlreadyInstalled ) {
+          let alreadyInstalledMessage = 'Package {0}{1} is already present in the org and will be ignored.';
+          if ( packageInfo.versionNumber !== undefined ) {
+            alreadyInstalledMessage = alreadyInstalledMessage.replace('{1}', ' v' + packageInfo.versionNumber);
+          } else {
+            alreadyInstalledMessage = alreadyInstalledMessage.replace('{1}', '');
+          }
+          this.ux.log(alreadyInstalledMessage.replace('{0}', packageInfo.dependentPackage));
+          packagesNotInstalled[packageInfo.packageVersionId] = packageInfo;
+          continue;
+        }
+
+        // Check to see if  this package version been installed as part of this installation event?  probably from one of the package directories in the sfdx-project.json
+        const matchedJustInstalled = Object.keys(packagesInstalled).find( item => item === packageInfo.packageVersionId );
+        if ( matchedJustInstalled ) {
+          // This was just installed
+          // this.ux.log(`bypassing additional request to install ${packageInfo.packageVersionId}`);
           continue;
         }
 
         // Split arguments to use spawn
         const args = [];
+        args.push('sfdx');
         args.push('force:package:install');
 
         // USERNAME
@@ -200,16 +238,22 @@ export default class Install extends SfdxCommand {
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
+        await exec(args.join(' '));
+        // this.ux.log(args.join(' '));
 
-        this.ux.log('\n');
+        // this.ux.log('\n');
 
         result.installedPackages[packageInfo.packageVersionId] = packageInfo;
+        packagesInstalled[packageInfo.packageVersionId] = packageInfo;
+
+        // TODO: add the current package to the list of packageVersionsAlreadyInstalled so that it won't be installed again.
 
         i++;
       }
     }
 
-    return { message: result };
+    // return { result };
+    return { packagesInstalled, packagesNotInstalled };
   }
 
   // private async getPackageVersionId(name, version) {
