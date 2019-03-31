@@ -53,7 +53,6 @@ export default class Install extends SfdxCommand {
   // public async run(): Promise<core.AnyJson> {
   public async run(): Promise<any> { // tslint:disable-line:no-any
 
-    const result = { installedPackages: {} };
     const packagesInstalled = { };
     const packagesNotInstalled = {};
 
@@ -242,8 +241,6 @@ export default class Install extends SfdxCommand {
         // this.ux.log(args.join(' '));
 
         // this.ux.log('\n');
-
-        result.installedPackages[packageInfo.packageVersionId] = packageInfo;
         packagesInstalled[packageInfo.packageVersionId] = packageInfo;
 
         // TODO: add the current package to the list of packageVersionsAlreadyInstalled so that it won't be installed again.
@@ -252,7 +249,6 @@ export default class Install extends SfdxCommand {
       }
     }
 
-    // return { result };
     return { packagesInstalled, packagesNotInstalled };
   }
 
