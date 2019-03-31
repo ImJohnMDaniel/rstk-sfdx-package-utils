@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 import util = require('util');
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
+import { PackageInstallRequest } from '../../../../types/package_install_request';
 // import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 const exec = util.promisify(child_process.exec);
@@ -237,13 +238,12 @@ export default class Install extends SfdxCommand {
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
-        await exec(args.join(' '));
+        const thePackageInstallRequest = await exec(args.join(' ')) as unknown as PackageInstallRequest;
         // this.ux.log(args.join(' '));
+        packageInfo.installationResult = thePackageInstallRequest;
 
         // this.ux.log('\n');
         packagesInstalled[packageInfo.packageVersionId] = packageInfo;
-
-        // TODO: add the current package to the list of packageVersionsAlreadyInstalled so that it won't be installed again.
 
         i++;
       }
