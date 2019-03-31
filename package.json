@@ -6,28 +6,28 @@
   "bugs": "https://github.com/RootstockMFG/rstk-sfdx-package-utils/issues",
   "dependencies": {
     "@oclif/command": "^1.5.12",
-    "@oclif/config": "^1.12.11",
+    "@oclif/config": "^1.12.12",
     "@oclif/errors": "^1.2.2",
-    "@salesforce/command": "^1.3.4",
-    "@salesforce/core": "^1.3.0",
+    "@salesforce/command": "^1.4.2",
+    "@salesforce/core": "^1.3.2",
     "fs-extra": "^7.0.1",
     "tslib": "^1.9.3"
   },
   "devDependencies": {
-    "@oclif/dev-cli": "^1.21.3",
+    "@oclif/dev-cli": "^1.22.0",
     "@oclif/plugin-help": "^2.1.6",
     "@oclif/test": "^1.2.4",
     "@salesforce/dev-config": "^1.4.4",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^11.11.6",
+    "@types/node": "^11.12.2",
     "chai": "^4.2.0",
     "globby": "^9.1.0",
     "mocha": "^6.0.2",
     "nyc": "^13.3.0",
-    "sinon": "^7.3.0",
+    "sinon": "^7.3.1",
     "ts-node": "^8.0.3",
-    "typescript": "^3.3.4000"
+    "typescript": "^3.4.1"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -63,11 +63,10 @@
   },
   "repository": "RootstockMFG/rstk-sfdx-package-utils",
   "scripts": {
-    "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
-    "posttest": "tsc -p test --noEmit && tslint -p test -t stylish",
-    "prepack": "rm -rf lib && tsc && oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
-    "prepare": "rm -rf lib && tsc && oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
-    "test": "nyc mocha --forbid-only \"test/**/*.test.ts\"",
+    "postpack": "rm -f oclif.manifest.json",
+    "posttest": "tslint -p test -t stylish",
+    "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md"
   }
 }
