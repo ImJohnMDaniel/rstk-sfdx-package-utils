@@ -17,7 +17,7 @@ $ npm install -g rstk-sfdx-package-utils
 $ sfdx COMMAND
 running command...
 $ sfdx (-v|--version|version)
-rstk-sfdx-package-utils/0.1.0 darwin-x64 node-v11.10.1
+rstk-sfdx-package-utils/0.1.1 darwin-x64 node-v11.10.1
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
@@ -70,5 +70,5 @@ EXAMPLE
   $ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"
 ```
 
-_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.0/src/commands/rstk/package/dependencies/install.ts)_
+_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.1/src/commands/rstk/package/dependencies/install.ts)_
 <!-- commandsstop -->
