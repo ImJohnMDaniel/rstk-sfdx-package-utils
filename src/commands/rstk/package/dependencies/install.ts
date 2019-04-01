@@ -6,6 +6,7 @@ import util = require('util');
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 import { PackageInstallRequest } from '../../../../types/package_install_request';
+import { Constants } from '../../../../shared/constants';
 // import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 const exec = util.promisify(child_process.exec);
@@ -130,12 +131,25 @@ export default class Install extends SfdxCommand {
           // is the dependentPackage an alias?
           const matched = aliasKeys.find( item => item === dependentPackage);
           if ( matched ) {
-            // the dependentPackage is a packageAlias
-            packageInfo.packageVersionId = packageAliases[matched];
-            // this.ux.log(packageAliases[matched]);
+            // the dependentPackage value is a packageAlias
+            this.ux.log(`found packageAliases[matched]: ${packageAliases[matched]}`);
+            if ( packageAliases[matched].startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              // the dependentPackage is a packageAlias
+              packageInfo.packageVersionId = packageAliases[matched];
+            } else if ( packageAliases[matched].startsWith(Constants.PACKAGE_ID_PREFIX) ) {
+              this.ux.log(`looking for ${dependentPackage} in DevHub`);
+              packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(packageAliases[matched], JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+            }
           } else {
+            // the dependentPackage value is an id
             // find the packageVersionId from the DevHub
-            packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+            this.ux.log(`found dependentPackage: ${dependentPackage}`);
+            if ( JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              packageInfo.packageVersionId = JSON.stringify(dependentPackage);
+            } else if (JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              this.ux.log(`looking for ${dependentPackage} in DevHub`);
+              packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+            }
           }
           packagesToInstall.push(packageInfo);
 
@@ -238,9 +252,11 @@ export default class Install extends SfdxCommand {
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
-        const thePackageInstallRequest = await exec(args.join(' ')) as unknown as PackageInstallRequest;
-        // this.ux.log(args.join(' '));
-        packageInfo.installationResult = thePackageInstallRequest;
+        if (!this.flags.dryrun) {
+          const thePackageInstallRequest = null; // await exec(args.join(' ')) as unknown as PackageInstallRequest;
+          // this.ux.log(args.join(' '));
+          packageInfo.installationResult = thePackageInstallRequest;
+        }
 
         // this.ux.log('\n');
         packagesInstalled[packageInfo.packageVersionId] = packageInfo;
