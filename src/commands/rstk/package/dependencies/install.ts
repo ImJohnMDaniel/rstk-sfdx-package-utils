@@ -6,21 +6,9 @@ import util = require('util');
 import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
-import { PackageInstallRequest } from '../../../../types/package_install_request';
-// import { watchFile } from 'fs';
-// import exec = require('child-process-promise').exec;
+
 const exec = util.promisify(child_process.exec);
-// import { exec } from 'child-process-promise';
-// const exec = require('child-process-promise').exec;
 
-// tslint:disable-next-line:no-var-requires
-// const spawn = require('child-process-promise').spawn;
-
-// const packageIdPrefix = '0Ho';
-// const packageVersionIdPrefix = '04t';
-
-// const packageAliasesMap = [];
-// const packageAliasesMap = { } as JsonMap;
 const defaultWait = 10;
 
 // Initialize Messages with the current plugin directory
@@ -259,7 +247,7 @@ export default class Install extends SfdxCommand {
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
         if (!this.flags.dryrun) {
-          const thePackageInstallRequest = await exec(args.join(' ')); // as unknown as PackageInstallRequest;
+          const thePackageInstallRequest = await exec(args.join(' '));
           // this.ux.log(args.join(' '));
           if ( this.flags.json ) {
             packageInfo.installationResult = JSON.parse(thePackageInstallRequest.stdout).result;
