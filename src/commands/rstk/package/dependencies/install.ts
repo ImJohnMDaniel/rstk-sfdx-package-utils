@@ -3,10 +3,10 @@ import { JsonArray, JsonMap } from '@salesforce/ts-types';
 import child_process = require('child_process');
 import * as _ from 'lodash';
 import util = require('util');
+import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 import { PackageInstallRequest } from '../../../../types/package_install_request';
-import { Constants } from '../../../../shared/constants';
 // import { watchFile } from 'fs';
 // import exec = require('child-process-promise').exec;
 const exec = util.promisify(child_process.exec);
@@ -40,7 +40,8 @@ export default class Install extends SfdxCommand {
     installationkeys: flags.string({char: 'k', required: false, description: messages.getMessage('flagInstallationKeysDescription')}),
     branch: flags.string({char: 'b', required: false, description: messages.getMessage('flagBranchDescription')}),
     wait: flags.number({char: 'w', required: false, description: messages.getMessage('flagWaitDescription')}),
-    noprompt: flags.boolean({char: 'r', required: false, description: messages.getMessage('flagNopromptDescription')})
+    noprompt: flags.boolean({char: 'r', required: false, description: messages.getMessage('flagNopromptDescription')}),
+    dryrun: flags.boolean({required: false, description: messages.getMessage('flagDryrunDescription')})
   };
 
   // Comment this out if your command does not require an org username
@@ -248,12 +249,17 @@ export default class Install extends SfdxCommand {
           args.push('--noprompt');
         }
 
+        // JSON
+        if (this.flags.json) {
+          args.push('--json');
+        }
+
         // INSTALL PACKAGE
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
         if (!this.flags.dryrun) {
-          const thePackageInstallRequest = null; // await exec(args.join(' ')) as unknown as PackageInstallRequest;
+          const thePackageInstallRequest = await exec(args.join(' ')) as unknown as PackageInstallRequest;
           // this.ux.log(args.join(' '));
           packageInfo.installationResult = thePackageInstallRequest;
         }
