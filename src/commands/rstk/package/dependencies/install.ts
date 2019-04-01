@@ -259,9 +259,13 @@ export default class Install extends SfdxCommand {
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         // await spawn('sfdx', args, { stdio: 'inherit' });
         if (!this.flags.dryrun) {
-          const thePackageInstallRequest = await exec(args.join(' ')) as unknown as PackageInstallRequest;
+          const thePackageInstallRequest = await exec(args.join(' ')); // as unknown as PackageInstallRequest;
           // this.ux.log(args.join(' '));
-          packageInfo.installationResult = thePackageInstallRequest;
+          if ( this.flags.json ) {
+            packageInfo.installationResult = JSON.parse(thePackageInstallRequest.stdout).result;
+          } else {
+            console.log( thePackageInstallRequest.stdout );
+          }
         }
 
         // this.ux.log('\n');
