@@ -17,7 +17,7 @@ $ npm install -g rstk-sfdx-package-utils
 $ sfdx COMMAND
 running command...
 $ sfdx (-v|--version|version)
-rstk-sfdx-package-utils/0.1.0 darwin-x64 node-v8.15.1
+rstk-sfdx-package-utils/0.1.0 darwin-x64 node-v11.10.1
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
@@ -26,38 +26,45 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`sfdx rstk:package:dependencies:install`](#sfdx-rstkpackagedependenciesinstall)
+* [`sfdx rstk:package:dependencies:install [-k <string>] [-b <string>] [-w <number>] [-r] [--dryrun] [-v <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal]`](#sfdx-rstkpackagedependenciesinstall--k-string--b-string--w-number--r---dryrun--v-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfatal)
 
-## `sfdx rstk:package:dependencies:install`
+## `sfdx rstk:package:dependencies:install [-k <string>] [-b <string>] [-w <number>] [-r] [--dryrun] [-v <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal]`
 
 Install dependent Packages for a sfdx project
 
 ```
 USAGE
-  $ sfdx rstk:package:dependencies:install
+  $ sfdx rstk:package:dependencies:install [-k <string>] [-b <string>] [-w <number>] [-r] [--dryrun] [-v <string>] [-u 
+  <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal]
 
 OPTIONS
-  -b, --branch=branch                              the package version’s branch
+  -b, --branch=branch                              For dependencies specified by package/versionNumber combination, you
+                                                   can specify the branch group of builds to work from by entering the
+                                                   branch build name.  If not specified, the builds from NULL branch
+                                                   will be considered.
 
-  -k, --installationkeys=installationkeys          installation key for key-protected packages (format is
+  -k, --installationkeys=installationkeys          Installation key for key-protected packages (format is
                                                    1:MyPackage1Key 2: 3:MyPackage3Key... to allow some packages without
                                                    installation key)
 
-  -r, --noprompt                                   allow Remote Site Settings and Content Security Policy websites to
+  -r, --noprompt                                   Allow Remote Site Settings and Content Security Policy websites to
                                                    send or receive data without confirmation
 
   -u, --targetusername=targetusername              username or alias for the target org; overrides default target org
 
   -v, --targetdevhubusername=targetdevhubusername  username or alias for the dev hub org; overrides default dev hub org
 
-  -w, --wait=wait                                  number of minutes to wait for installation status (also used for
+  -w, --wait=wait                                  Number of minutes to wait for installation status (also used for
                                                    publishwait). Default is 10
 
   --apiversion=apiversion                          override the api version used for api requests made by this command
 
+  --dryrun                                         Allows the command to execute and display result information without
+                                                   actually performing the package installations.  Useful if debugging.
+
   --json                                           format output as json
 
-  --loglevel=(trace|debug|info|warn|error|fatal)   logging level for this command invocation
+  --loglevel=(trace|debug|info|warn|error|fatal)   [default: warn] logging level for this command invocation
 
 EXAMPLE
   $ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"

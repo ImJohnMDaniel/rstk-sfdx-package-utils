@@ -1,15 +1,14 @@
 import { core, flags, SfdxCommand } from '@salesforce/command';
-import { watchFile } from 'fs';
-// import exec = require('child-process-promise').exec;
-// import { exec } from 'child-process-promise';
-// const exec = require('child-process-promise').exec;
+import { JsonArray, JsonMap } from '@salesforce/ts-types';
+import child_process = require('child_process');
+import * as _ from 'lodash';
+import util = require('util');
+import { Constants } from '../../../../shared/constants';
+import devHubService = require('../../../../shared/devhubService');
+import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 
-// tslint:disable-next-line:no-var-requires
-const spawn = require('child-process-promise').spawn;
+const exec = util.promisify(child_process.exec);
 
-const packageIdPrefix = '0Ho';
-const packageVersionIdPrefix = '04t';
-const packageAliasesMap = [];
 const defaultWait = 10;
 
 // Initialize Messages with the current plugin directory
@@ -23,15 +22,14 @@ export default class Install extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
-  public static examples = [
-    '$ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"'
-  ];
+  public static examples = [messages.getMessage('examplesDescription')];
 
   protected static flagsConfig = {
-    installationkeys: { char: 'k', required: false, description: 'installation key for key-protected packages (format is 1:MyPackage1Key 2: 3:MyPackage3Key... to allow some packages without installation key)' },
-    branch: { char: 'b', required: false, description: 'the package version’s branch' },
-    wait: { char: 'w', type: 'number', required: false, description: 'number of minutes to wait for installation status (also used for publishwait). Default is 10' },
-    noprompt: { char: 'r', required: false, type: 'boolean', description: 'allow Remote Site Settings and Content Security Policy websites to send or receive data without confirmation' }
+    installationkeys: flags.string({char: 'k', required: false, description: messages.getMessage('flagInstallationKeysDescription')}),
+    branch: flags.string({char: 'b', required: false, description: messages.getMessage('flagBranchDescription')}),
+    wait: flags.number({char: 'w', required: false, description: messages.getMessage('flagWaitDescription')}),
+    noprompt: flags.boolean({char: 'r', required: false, description: messages.getMessage('flagNopromptDescription')}),
+    dryrun: flags.boolean({required: false, description: messages.getMessage('flagDryrunDescription')})
   };
 
   // Comment this out if your command does not require an org username
@@ -43,63 +41,115 @@ export default class Install extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  public async run(): Promise<core.AnyJson> {
+  // public async run(): Promise<core.AnyJson> {
+  public async run(): Promise<any> { // tslint:disable-line:no-any
 
-    const result = { installedPackages: {} };
+    const packagesInstalled = { };
+    const packagesNotInstalled = {};
 
-    // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-    const username = this.org.getUsername();
+    const packageVersionsAlreadyInstalled = await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org, this.ux);
 
     // Getting Project config
-    const project = await core.SfdxProjectJson.retrieve<core.SfdxProjectJson>();
+    const projectJson = await this.project.retrieveSfdxProjectJson();
+    // this.ux.logJson(projectJson);
 
     // Getting a list of alias
-    const packageAliases = project.get('packageAliases') || {};
-    if (typeof packageAliases !== undefined ) {
+    const packageAliases = _.get(projectJson['contents'], 'packageAliases');
+//    this.ux.logJson(packageAliases);
+    // this.ux.logJson(packageAliases['rstk-sfdx-ref-apex-common']);
 
-      Object.entries(packageAliases).forEach(([key, value]) => {
-        packageAliasesMap[key] = value;
-      });
-    }
+    // if (typeof packageAliases !== undefined ) {
+    //   this.ux.log('in the packageAliases section');
+    //   // Object.entries(packageAliases).forEach(([key, value]) => {
+    //   //   packageAliasesMap[key] = value;
+    //   // });
+    //   // packageAliases.
+    const aliasKeys = Object.keys(packageAliases);
+    //   // this.ux.log(aliases);
+    //   // console.log(aliasKeys);
 
-    // Getting Package
+    //   for (const aliasKey of aliasKeys) {
+    //     // packageAlias = packageAlias as JsonMap;
+    //     // this.ux.log(aliasKey);
+    //     // this.ux.log(packageAliases[aliasKey]);
+    //     packageAliasesMap[aliasKey] = packageAliases[aliasKey];
+    //   }
+    //   this.ux.logJson(packageAliasesMap);
+
+    //   // this.ux.log(`Found ${packageAliasesMap.length} aliases`);
+    //   this.ux.log(`Found ${Object.keys(packageAliases).length} aliases`);
+    //   this.ux.log(`Found ${Object.keys(packageAliasesMap).length} aliases`);
+    // }
+
     const packagesToInstall = [];
 
-    const packageDirectories = project.get('packageDirectories') as core.JsonArray || [];
+    const packageDirectories =  _.get(projectJson['contents'], 'packageDirectories');
+    // this.ux.logJson(packageDirectories);
 
+    // Object.entries(packageDirectories).forEach(async ([key, value]) => {  // using this construct causes things to execute non-synchrounously
     for (let packageDirectory of packageDirectories) {
-      packageDirectory = packageDirectory as core.JsonMap;
+      packageDirectory = packageDirectory as JsonMap;
+      // const packageDirectory = value as JsonMap;
       // this.ux.logJson(packageDirectory);
       // let { package: dependencies } = packageDirectory;
-      const dependencies = packageDirectory.dependencies || [];
+      const dependencies = (packageDirectory.dependencies || []) as JsonArray;
 
       // TODO: Move all labels to message
-      // this.ux.log(dependencies);
+      // this.ux.logJson(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
-        this.ux.log(`\nPackage dependencies found for package directory ${packageDirectory.path}`);
-        for (const dependency of (dependencies as core.JsonArray)) {
+        this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound', [packageDirectory.path.toString()]));
+        // this.ux.logJson(dependencies);
 
+        for (const dependency of dependencies ) {
+          // this.ux.log('Here');
           // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
-          const packageInfo = { } as core.JsonMap;
+          const packageInfo = { } as JsonMap;
 
-          const { package: dependentPackage, versionNumber } = dependency as core.JsonMap;
-          // this.ux.log( dependentPackage );
+          const { package: dependentPackage, versionNumber } = dependency as JsonMap;
+          // this.ux.log( 'dependentPackage == ' + JSON.stringify(dependentPackage) );
           packageInfo.dependentPackage = dependentPackage;
 
-          // this.ux.log( versionNumber );
+          // debug info about versionNumber
+          // if (versionNumber !== 'undefined') {
+          //   this.ux.log( 'versionNumber == ' + JSON.stringify(versionNumber) );
+          // }
           packageInfo.versionNumber = versionNumber;
 
-          const packageVersionId = await this.getPackageVersionId(dependentPackage, versionNumber);
-          // this.ux.log(packageVersionId);
-          packageInfo.packageVersionId = packageVersionId;
+          //  if versionNumber is undefined and dependentPackage is a packageAlias, then the alias should return the package version 04t id
+          //  if that is the case, then there is no need to get teh debHubServier to resolve the package version id
+          // is the dependentPackage an alias?
+          const matched = aliasKeys.find( item => item === dependentPackage);
+          if ( matched ) {
+            // the dependentPackage value is a packageAlias
+            this.ux.log(`found packageAliases[matched]: ${packageAliases[matched]}`);
+            if ( packageAliases[matched].startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              // the dependentPackage is a packageAlias
+              packageInfo.packageVersionId = packageAliases[matched];
+            } else if ( packageAliases[matched].startsWith(Constants.PACKAGE_ID_PREFIX) ) {
+              this.ux.log(`looking for ${dependentPackage} in DevHub`);
+              packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(packageAliases[matched], JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+            }
+          } else {
+            // the dependentPackage value is an id
+            // find the packageVersionId from the DevHub
+            this.ux.log(`found dependentPackage: ${dependentPackage}`);
+            if ( JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              packageInfo.packageVersionId = JSON.stringify(dependentPackage);
+            } else if (JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX) ) {
+              this.ux.log(`looking for ${dependentPackage} in DevHub`);
+              packageInfo.packageVersionId = await devHubService.resolvePackageVersionId(JSON.stringify(dependentPackage), JSON.stringify(versionNumber), this.flags.branch, this.hubOrg);
+            }
+          }
+          packagesToInstall.push(packageInfo);
 
-          packagesToInstall.push( packageInfo );
           this.ux.log( `    ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
         }
       } else {
-        this.ux.log(`\nNo dependencies found for package directory ${packageDirectory.path}`);
-      }
+         this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound', [packageDirectory.path.toString()]));
+       }
     }
+    // }
+    this.ux.log('\n');
 
     if (packagesToInstall.length > 0) { // Installing Packages
 
@@ -117,30 +167,53 @@ export default class Install extends SfdxCommand {
             installationKeys[keyIndex] = key.substring(2);
           } else {
             // Format is not correct, throw an error
-            throw new core.SfdxError('Installation Key should have this format: 1:MyPackage1Key 2: 3:MyPackage3Key');
+            throw new core.SfdxError( messages.getMessage('errorInstallationKeyFormat') );
           }
         }
       }
 
-      this.ux.log('\n');
+      // this.ux.log('\n');
+      // this.ux.log(`The size of the packageVersionsAlreadyInstalled list is ${packageVersionsAlreadyInstalled.length}`);
+      // this.ux.log('\n');
+      // console.log(packageVersionsAlreadyInstalled);
+      // this.ux.log('\n');
+      this.ux.log('Beginning installs of packages...');
 
       let i = 0;
       for (let packageInfo of packagesToInstall) {
-        packageInfo = packageInfo as core.JsonMap;
+        packageInfo = packageInfo as JsonMap;
 
         // Check to see if this package version has already been installed in the org.
-        if (result.installedPackages.hasOwnProperty(packageInfo.packageVersionId)) {
-          this.ux.log(`PackageVersionId ${packageInfo.packageVersionId} already installed. Skipping...`);
+        const matchedAlreadyInstalled = packageVersionsAlreadyInstalled.find( item => item.SubscriberPackageVersionId === packageInfo.packageVersionId );
+
+        if ( matchedAlreadyInstalled ) {
+          let alreadyInstalledMessage = 'Package {0}{1} is already present in the org and will be ignored.';
+          if ( packageInfo.versionNumber !== undefined ) {
+            alreadyInstalledMessage = alreadyInstalledMessage.replace('{1}', ' v' + packageInfo.versionNumber);
+          } else {
+            alreadyInstalledMessage = alreadyInstalledMessage.replace('{1}', '');
+          }
+          this.ux.log(alreadyInstalledMessage.replace('{0}', packageInfo.dependentPackage));
+          packagesNotInstalled[packageInfo.packageVersionId] = packageInfo;
+          continue;
+        }
+
+        // Check to see if  this package version been installed as part of this installation event?  probably from one of the package directories in the sfdx-project.json
+        const matchedJustInstalled = Object.keys(packagesInstalled).find( item => item === packageInfo.packageVersionId );
+        if ( matchedJustInstalled ) {
+          // This was just installed
+          // this.ux.log(`bypassing additional request to install ${packageInfo.packageVersionId}`);
           continue;
         }
 
         // Split arguments to use spawn
         const args = [];
+        args.push('sfdx');
         args.push('force:package:install');
 
         // USERNAME
         args.push('--targetusername');
-        args.push(`${username}`);
+        args.push(`${this.org.getUsername()}`);
 
         // PACKAGE ID
         args.push('--package');
@@ -164,71 +237,85 @@ export default class Install extends SfdxCommand {
           args.push('--noprompt');
         }
 
+        // JSON
+        if (this.flags.json) {
+          args.push('--json');
+        }
+
         // INSTALL PACKAGE
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
         this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
-        await spawn('sfdx', args, { stdio: 'inherit' });
+        // await spawn('sfdx', args, { stdio: 'inherit' });
+        if (!this.flags.dryrun) {
+          const thePackageInstallRequest = await exec(args.join(' '));
+          // this.ux.log(args.join(' '));
+          if ( this.flags.json ) {
+            packageInfo.installationResult = JSON.parse(thePackageInstallRequest.stdout).result;
+          } else {
+            console.log( thePackageInstallRequest.stdout );
+          }
+        }
 
-        this.ux.log('\n');
-
-        result.installedPackages[packageInfo.packageVersionId] = packageInfo;
+        // this.ux.log('\n');
+        packagesInstalled[packageInfo.packageVersionId] = packageInfo;
 
         i++;
       }
     }
 
-    return { message: result };
+    return { packagesInstalled, packagesNotInstalled };
   }
 
-  private async getPackageVersionId(name, version) {
+  // private async getPackageVersionId(name, version) {
 
-    let packageId = messages.getMessage('invalidPackageName');
-    // Keeping original name so that it can be used in error message if needed
-    let packageName = name;
+  //   let packageId = messages.getMessage('invalidPackageName');
+  //   // Keeping original name so that it can be used in error message if needed
+  //   let packageName = name;
 
-    // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
-    // First look if it's an alias
-    if (typeof packageAliasesMap[packageName] !== 'undefined') {
-      packageName = packageAliasesMap[packageName];
-    }
+  //   // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
+  //   // First look if it's an alias
+  //   if (typeof packageAliasesMap[packageName] !== 'undefined') {
+  //     packageName = packageAliasesMap[packageName];
+  //   }
 
-    if (packageName.startsWith(packageVersionIdPrefix)) {
-      // Package2VersionId is set directly
-      packageId = packageName;
-    } else if (packageName.startsWith(packageIdPrefix)) {
-      // Get Package version id from package + versionNumber
-      const vers = version.split('.');
-      let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
-      query += 'from Package2Version ';
-      query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} and MinorVersion=${vers[1]} and PatchVersion=${vers[2]} `;
+  //   if (packageName.startsWith(packageVersionIdPrefix)) {
+  //     // Package2VersionId is set directly
+  //     packageId = packageName;
+  // //    } else if (packageName.startsWith(packageIdPrefix)) {
+  //   } else if (packageName.startsWith(Constants.PACKAGE_ID_PREFIX)) {
+  //     // Get Package version id from package + versionNumber
+  //     const vers = version.split('.');
+  //     let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
+  //     query += 'from Package2Version ';
+  //     query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} and MinorVersion=${vers[1]} and PatchVersion=${vers[2]} `;
 
-      // If Build Number isn't set to LATEST, look for the exact Package Version
-      if (vers[3] !== 'LATEST') {
-        query += `and BuildNumber=${vers[3]} `;
-      }
+  //     // If Build Number isn't set to LATEST, look for the exact Package Version
+  //     if (vers[3] !== 'LATEST') {
+  //       query += `and BuildNumber=${vers[3]} `;
+  //     }
 
-      // If Branch is specified, use it to filter
-      if (this.flags.branch) {
-        query += `and Branch='${this.flags.branch.trim()}' `;
-      }
+  //     // If Branch is specified, use it to filter
+  //     if (this.flags.branch) {
+  //       query += `and Branch='${this.flags.branch.trim()}' `;
+  //     }
 
-      query += 'ORDER BY BuildNumber DESC Limit 1';
+  //     query += 'ORDER BY BuildNumber DESC Limit 1';
 
-      // Query DevHub to get the expected Package2Version
-      const conn = this.hubOrg.getConnection();
+  //     // Query DevHub to get the expected Package2Version
+  //     const conn = this.hubOrg.getConnection();
 
-      // tslint:disable-next-line:no-any
-      const resultPackageId = await conn.tooling.query(query) as any;
+  //     // tslint:disable-next-line:no-any
+  //     const resultPackageId = await conn.tooling.query(query) as any;
 
-      if (resultPackageId.size === 0) {
-        // Query returned no result
-        const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
-        throw new core.SfdxError(errorMessage);
-      } else {
-        packageId = resultPackageId.records[0].SubscriberPackageVersionId;
-      }
-    }
+  //     if (resultPackageId.size === 0) {
+  //       // Query returned no result
+  //       const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
+  //       throw new core.SfdxError(errorMessage);
+  //     } else {
+  //       packageId = resultPackageId.records[0].SubscriberPackageVersionId;
+  //     }
+  //   }
 
-    return packageId;
-  }
+  //   return packageId;
+  // }
 }
