@@ -2,12 +2,11 @@ import { core, flags, SfdxCommand } from '@salesforce/command';
 import { JsonArray, JsonMap } from '@salesforce/ts-types';
 import child_process = require('child_process');
 import * as _ from 'lodash';
-import util = require('util');
 import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 
-const exec = util.promisify(child_process.exec);
+const spawn = child_process.spawnSync;
 
 const defaultWait = 10;
 
@@ -55,31 +54,7 @@ export default class Install extends SfdxCommand {
 
     // Getting a list of alias
     const packageAliases = _.get(projectJson['contents'], 'packageAliases');
-//    this.ux.logJson(packageAliases);
-    // this.ux.logJson(packageAliases['rstk-sfdx-ref-apex-common']);
-
-    // if (typeof packageAliases !== undefined ) {
-    //   this.ux.log('in the packageAliases section');
-    //   // Object.entries(packageAliases).forEach(([key, value]) => {
-    //   //   packageAliasesMap[key] = value;
-    //   // });
-    //   // packageAliases.
     const aliasKeys = Object.keys(packageAliases);
-    //   // this.ux.log(aliases);
-    //   // console.log(aliasKeys);
-
-    //   for (const aliasKey of aliasKeys) {
-    //     // packageAlias = packageAlias as JsonMap;
-    //     // this.ux.log(aliasKey);
-    //     // this.ux.log(packageAliases[aliasKey]);
-    //     packageAliasesMap[aliasKey] = packageAliases[aliasKey];
-    //   }
-    //   this.ux.logJson(packageAliasesMap);
-
-    //   // this.ux.log(`Found ${packageAliasesMap.length} aliases`);
-    //   this.ux.log(`Found ${Object.keys(packageAliases).length} aliases`);
-    //   this.ux.log(`Found ${Object.keys(packageAliasesMap).length} aliases`);
-    // }
 
     const packagesToInstall = [];
 
@@ -172,11 +147,6 @@ export default class Install extends SfdxCommand {
         }
       }
 
-      // this.ux.log('\n');
-      // this.ux.log(`The size of the packageVersionsAlreadyInstalled list is ${packageVersionsAlreadyInstalled.length}`);
-      // this.ux.log('\n');
-      // console.log(packageVersionsAlreadyInstalled);
-      // this.ux.log('\n');
       this.ux.log('Beginning installs of packages...');
 
       let i = 0;
@@ -202,13 +172,13 @@ export default class Install extends SfdxCommand {
         const matchedJustInstalled = Object.keys(packagesInstalled).find( item => item === packageInfo.packageVersionId );
         if ( matchedJustInstalled ) {
           // This was just installed
-          // this.ux.log(`bypassing additional request to install ${packageInfo.packageVersionId}`);
+          this.ux.log(`bypassing additional request to install ${packageInfo.packageVersionId}`);
           continue;
         }
 
         // Split arguments to use spawn
         const args = [];
-        args.push('sfdx');
+        // args.push('sfdx');
         args.push('force:package:install');
 
         // USERNAME
@@ -244,19 +214,30 @@ export default class Install extends SfdxCommand {
 
         // INSTALL PACKAGE
         // TODO: How to add a debug flag or write to sfdx.log with --loglevel ?
-        this.ux.log(`Installing package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
-        // await spawn('sfdx', args, { stdio: 'inherit' });
+        this.ux.log(`\nInstalling package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
+
         if (!this.flags.dryrun) {
-          const thePackageInstallRequest = await exec(args.join(' '));
-          // this.ux.log(args.join(' '));
+          // const stdioValue = 'inherit'; // this will show the output from the install command but does not appear to be captured to the stdout
+          const stdioValue = 'pipe'; // this stdio value appears to work
+          const sfdxCommandReturn = spawn('sfdx', args, { stdio: stdioValue});
+          // await packageInstallPromise;
+          // this.ux.log('BLUELEGO');
+          // this.ux.log(`sfdxCommandReturn.output == ${sfdxCommandReturn.output}`);
+          // this.ux.log(`sfdxCommandReturn.stdout == ${sfdxCommandReturn.stdout}`);
+          // this.ux.log(`sfdxCommandReturn.status == ${sfdxCommandReturn.status}`);
+          // this.ux.log(`sfdxCommandReturn.pid == ${sfdxCommandReturn.pid}`);
+          // this.ux.log(`sfdxCommandReturn.signal == ${sfdxCommandReturn.signal}`);
+          // this.ux.log(`sfdxCommandReturn.status == ${sfdxCommandReturn.status}`);
+          // this.ux.log(`sfdxCommandReturn.error == ${sfdxCommandReturn.error}`);
+
           if ( this.flags.json ) {
-            packageInfo.installationResult = JSON.parse(thePackageInstallRequest.stdout).result;
-          } else {
-            console.log( thePackageInstallRequest.stdout );
+            if ( sfdxCommandReturn.stdout ) {
+              packageInfo.installationResult = JSON.parse(sfdxCommandReturn.stdout.toString()).result;
+            }
           }
         }
 
-        // this.ux.log('\n');
+        this.ux.log('\n');
         packagesInstalled[packageInfo.packageVersionId] = packageInfo;
 
         i++;
@@ -265,57 +246,4 @@ export default class Install extends SfdxCommand {
 
     return { packagesInstalled, packagesNotInstalled };
   }
-
-  // private async getPackageVersionId(name, version) {
-
-  //   let packageId = messages.getMessage('invalidPackageName');
-  //   // Keeping original name so that it can be used in error message if needed
-  //   let packageName = name;
-
-  //   // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
-  //   // First look if it's an alias
-  //   if (typeof packageAliasesMap[packageName] !== 'undefined') {
-  //     packageName = packageAliasesMap[packageName];
-  //   }
-
-  //   if (packageName.startsWith(packageVersionIdPrefix)) {
-  //     // Package2VersionId is set directly
-  //     packageId = packageName;
-  // //    } else if (packageName.startsWith(packageIdPrefix)) {
-  //   } else if (packageName.startsWith(Constants.PACKAGE_ID_PREFIX)) {
-  //     // Get Package version id from package + versionNumber
-  //     const vers = version.split('.');
-  //     let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
-  //     query += 'from Package2Version ';
-  //     query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} and MinorVersion=${vers[1]} and PatchVersion=${vers[2]} `;
-
-  //     // If Build Number isn't set to LATEST, look for the exact Package Version
-  //     if (vers[3] !== 'LATEST') {
-  //       query += `and BuildNumber=${vers[3]} `;
-  //     }
-
-  //     // If Branch is specified, use it to filter
-  //     if (this.flags.branch) {
-  //       query += `and Branch='${this.flags.branch.trim()}' `;
-  //     }
-
-  //     query += 'ORDER BY BuildNumber DESC Limit 1';
-
-  //     // Query DevHub to get the expected Package2Version
-  //     const conn = this.hubOrg.getConnection();
-
-  //     // tslint:disable-next-line:no-any
-  //     const resultPackageId = await conn.tooling.query(query) as any;
-
-  //     if (resultPackageId.size === 0) {
-  //       // Query returned no result
-  //       const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
-  //       throw new core.SfdxError(errorMessage);
-  //     } else {
-  //       packageId = resultPackageId.records[0].SubscriberPackageVersionId;
-  //     }
-  //   }
-
-  //   return packageId;
-  // }
 }
