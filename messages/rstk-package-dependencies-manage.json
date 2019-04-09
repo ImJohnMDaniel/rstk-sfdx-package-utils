@@ -3,6 +3,7 @@
     "invalidPackageName": "Invalid Package Name",
     "invalidVersionNumber": "Invalid Version Number",
     "branchFlagDescription": "the package version’s branch",
-    "commandSpinner": "Managing the dependencies..."
+    "commandSpinner": "Managing the dependencies...",
+    "examplesDescription": "$ sfdx rstk:package:dependencies:manage --targetusername myOrg@example.com --targetdevhubusername devhub@org.com"
 }
   
