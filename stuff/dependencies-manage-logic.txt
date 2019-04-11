@@ -34,3 +34,35 @@ Artifact Version Classification Types
 - LATEST BUILD - CURRENT BRANCH
 - VERSION ID 
 
+
+____________________________________________________________
+
+What does the manage command need to do?
+
+
+scan the project json to understand what the current dependencies are
+determine the packages (not package versions) that are referenced here
+
+scan the DevHub for available package versions of all the packages
+
+if ( packages dependencies)
+    Loop for each dependency
+        offer #MenuSelection
+else
+    offer the "Add package dependency" option
+
+
+
+
+
+____________________________________________________________c
+
+#MenuSelection
+
+for current package, show options for 
+- latest released version
+- latest beta, non-branched version
+- latest beta, branched version
+- specific build version
+- remove dependency completely
+- add new package dependency
