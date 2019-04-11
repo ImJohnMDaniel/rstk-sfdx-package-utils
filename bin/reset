@@ -1,0 +1,3 @@
+sfdx force:org:delete -p -u rspu1
+sfdx force:org:create -a rspu1 -f config/project-scratch-def.json -n -s -w 20
+# bin/run rstk:package:dependencies:install -w 120 -r 
