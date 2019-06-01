@@ -1,12 +1,21 @@
-import { core, flags, SfdxCommand } from '@salesforce/command';
+import { core, flags, SfdxCommand, UX } from '@salesforce/command';
 import { JsonArray, JsonMap } from '@salesforce/ts-types';
-import child_process = require('child_process');
+// import child_process = require('child_process');
 import * as _ from 'lodash';
+// import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
+// import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
+// import { PackageInstalledListCommand } from 'salesforce-alm/dist/commands/force/package/installed/list';
+// import { PackageInstallCommand } from 'salesforce-alm/dist/lib/package/packageInstallCommand';
 import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
+// tslint:disable-next-line:no-var-requires
+const { chunksToLinesAsync, chomp } = require('@rauschma/stringio');
+// tslint:disable-next-line:no-var-requires
+const {spawn} = require('child_process');
 
-const spawn = child_process.spawnSync;
+// const spawn = child_process.spawnSync;
+// const spawn = child_process.spawn;
 
 const defaultWait = 10;
 
@@ -16,6 +25,24 @@ core.Messages.importMessagesDirectory(__dirname);
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
 const messages = core.Messages.loadMessages('rstk-sfdx-package-utils', 'rstk-package-dependencies-install');
+
+async function processStreamOutputToJSON(readable, isParsingJson: boolean, thisUx: UX) {
+  let commandOutput = '';
+  let chunkString = '';
+  for await (const line of chunksToLinesAsync(readable)) {
+    chunkString = chomp(line).trim();
+    // if (!isParsingJson ) {
+    thisUx.log(chunkString);
+    // }
+    commandOutput = commandOutput + chunkString;
+  }
+  // console.log(commandOutput);
+  if ( isParsingJson ) {
+    commandOutput = JSON.parse(commandOutput);
+  }
+
+  return commandOutput;
+}
 
 export default class Install extends SfdxCommand {
 
@@ -217,10 +244,11 @@ export default class Install extends SfdxCommand {
         this.ux.log(`\nInstalling package ${packageInfo.packageVersionId} : ${packageInfo.dependentPackage}${ packageInfo.versionNumber === undefined ? '' : ' ' + packageInfo.versionNumber }`);
 
         if (!this.flags.dryrun) {
-          // const stdioValue = 'inherit'; // this will show the output from the install command but does not appear to be captured to the stdout
-          const stdioValue = 'pipe'; // this stdio value appears to work
-          const sfdxCommandReturn = spawn('sfdx', args, { stdio: stdioValue});
-          // await packageInstallPromise;
+//           const stdioValue = 'inherit'; // this will show the output from the install command but does not appear to be captured to the stdout
+          // const stdioValue = 'pipe'; // this stdio value appears to work
+          // const sfdxCommandReturn = spawn('sfdx', args, { stdio: stdioValue});
+          // // await packageInstallPromise;
+          // this.ux.log('_________________________________________________________________________________');
           // this.ux.log('BLUELEGO');
           // this.ux.log(`sfdxCommandReturn.output == ${sfdxCommandReturn.output}`);
           // this.ux.log(`sfdxCommandReturn.stdout == ${sfdxCommandReturn.stdout}`);
@@ -230,11 +258,38 @@ export default class Install extends SfdxCommand {
           // this.ux.log(`sfdxCommandReturn.status == ${sfdxCommandReturn.status}`);
           // this.ux.log(`sfdxCommandReturn.error == ${sfdxCommandReturn.error}`);
 
+          // works but no live output stream
+          const stdioValue = ['ignore', 'pipe', process.stderr]; // this goes with the processStreamOutputToJSON option
+
+          // don't work
+          // const stdioValue = 'inherit';
+          // const stdioValue = ['ignore', process.stdout, process.stderr];
+          // const stdioValue = ['ignore', 'inherit', process.stderr]; // this goes with the processStreamOutputToJSON option
+
+          const childProcess = spawn('sfdx', args, { stdio: stdioValue});
+
+          const installationResultJson = await processStreamOutputToJSON(childProcess.stdout, this.flags.json, this.ux);
+
           if ( this.flags.json ) {
-            if ( sfdxCommandReturn.stdout ) {
-              packageInfo.installationResult = JSON.parse(sfdxCommandReturn.stdout.toString()).result;
-            }
+            // if ( sfdxCommandReturn.stdout ) {
+            //  packageInfo.installationResult = JSON.parse(sfdxCommandReturn.stdout.toString()).result;
+            // }
+            packageInfo.installationResult = installationResultJson;
           }
+
+          // const sfdxCommandChildPromise = spawn('sfdx', args, { stdio: stdioValue});
+          // // tslint:disable-next-line:only-arrow-functions
+          // sfdxCommandChildPromise.stderr.on('data', function(data) {
+          //   console.error('STDERR:', data.toString());
+          // });
+          // // tslint:disable-next-line:only-arrow-functions
+          // sfdxCommandChildPromise.stdout.on('data', function(data) {
+          //   console.log('STDOUT:', data.toString());
+          // });
+          // // tslint:disable-next-line:only-arrow-functions
+          // sfdxCommandChildPromise.on('exit', function(exitCode) {
+          //   console.log('Child exited with code: ' + exitCode);
+          // });
         }
 
         this.ux.log('\n');
@@ -246,4 +301,5 @@ export default class Install extends SfdxCommand {
 
     return { packagesInstalled, packagesNotInstalled };
   }
+
 }

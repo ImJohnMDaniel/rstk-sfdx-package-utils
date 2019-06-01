@@ -55,7 +55,6 @@ export async function resolvePackageVersionId(name: string, version: string, bra
   // Keeping original name so that it can be used in error message if needed
   // let packageName = name;
 
-  // // TODO: Some stuff are duplicated here, some code don't need to be executed for every package
   // // First look if it's an alias
   // if (typeof packageAliasesMap[packageName] !== 'undefined') {
   //   packageName = packageAliasesMap[packageName];
@@ -68,23 +67,30 @@ export async function resolvePackageVersionId(name: string, version: string, bra
     packageId = packageName;
   } else if (packageName.startsWith(Constants.PACKAGE_ID_PREFIX)) {
     // Get Package version id from package + versionNumber
-    const vers = version.split('.');
+
+    // strip out the "-LATEST" string as it won't be needed in the query.
+    const versionWorking = version.toUpperCase().replace('-LATEST', '').replace('.LATEST', '');
+
+    // Split the remaining "Major.Minor.Patch.BuildNumber" version number out to its individual integers.
+    const vers = versionWorking.split('.');
+
+    // Assemble the query needed
     let query = 'Select SubscriberPackageVersionId, IsPasswordProtected, IsReleased ';
     query += 'from Package2Version ';
     query += `where Package2Id='${packageName}' and MajorVersion=${vers[0]} `;
 
     // If Minor Version isn't set to LATEST, look for the exact Minor Version
-    if (vers[1] && vers[1] !== 'LATEST') {
+    if (vers[1]) {
       query += `and MinorVersion=${vers[1]} `;
     }
 
     // If Patch Version isn't set to LATEST, look for the exact Patch Version
-    if (vers[2] && vers[2] !== 'LATEST') {
+    if (vers[2]) {
       query += `and PatchVersion=${vers[2]} `;
     }
 
     // If Build Number isn't set to LATEST, look for the exact Package Version
-    if (vers[3] && vers[3] !== 'LATEST') {
+    if (vers[3]) {
       query += `and BuildNumber=${vers[3]} `;
     }
 
@@ -95,7 +101,10 @@ export async function resolvePackageVersionId(name: string, version: string, bra
       query += 'and Branch=NULL ';
     }
 
-    query += 'ORDER BY BuildNumber DESC Limit 1';
+    // if the query is looking for a "LATEST", "Non-pinned" version, then we need
+    //  to sort the result list in such a manner to that the latest version will
+    //  be the first record in the result set.
+    query += 'ORDER BY MajorVersion DESC, MinorVersion DESC, PatchVersion DESC, BuildNumber DESC Limit 1';
 
     // console.log(`Query: ${query}`);
 
@@ -103,15 +112,15 @@ export async function resolvePackageVersionId(name: string, version: string, bra
     const conn = theDevHubOrg.getConnection();
 
     // tslint:disable-next-line:no-any
-    const resultPackageId = await conn.tooling.query(query) as any;
-    // console.log(resultPackageId);
+    const resultPackageVersionRecord = await conn.tooling.query(query) as any;
+    // console.log(resultPackageVersionRecord);
 
-    if (resultPackageId.size === 0) {
+    if (resultPackageVersionRecord.size === 0) {
       // Query returned no result
       const errorMessage = `Unable to find SubscriberPackageVersionId for dependent package ${name}`;
       throw new core.SfdxError(errorMessage);
     } else {
-      packageId = resultPackageId.records[0].SubscriberPackageVersionId;
+      packageId = resultPackageVersionRecord.records[0].SubscriberPackageVersionId;
     }
   }
 

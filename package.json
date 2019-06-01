@@ -1,17 +1,21 @@
 {
   "name": "rstk-sfdx-package-utils",
   "description": "Utilities to better manage SalesforceDX Packages",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "author": "John M. Daniel @ImJohnMDaniel",
   "bugs": "https://github.com/RootstockMFG/rstk-sfdx-package-utils/issues",
   "dependencies": {
-    "@oclif/command": "^1.5.12",
+    "@oclif/command": "^1.5.13",
     "@oclif/config": "^1.12.12",
     "@oclif/errors": "^1.2.2",
-    "@salesforce/command": "^1.5.0",
+    "@salesforce/command": "^1.5.1",
     "@salesforce/core": "^1.3.3",
+    "salesforce-alm": "^45.16.0",
     "fs-extra": "^7.0.1",
-    "tslib": "^1.9.3"
+    "tslib": "^1.9.3",
+    "child-process-promise": "^2.2.1",
+    "child_process": "^1.0.2",
+    "@rauschma/stringio": "^1.4.0"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.22.0",
@@ -20,14 +24,14 @@
     "@salesforce/dev-config": "^1.4.4",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^11.12.2",
+    "@types/node": "^12.0.0",
     "chai": "^4.2.0",
-    "globby": "^9.1.0",
-    "mocha": "^6.0.2",
-    "nyc": "^13.3.0",
-    "sinon": "^7.3.1",
-    "ts-node": "^8.0.3",
-    "typescript": "^3.4.1"
+    "globby": "^9.2.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.0.0",
+    "sinon": "^7.3.2",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5"
   },
   "engines": {
     "node": ">=8.0.0"

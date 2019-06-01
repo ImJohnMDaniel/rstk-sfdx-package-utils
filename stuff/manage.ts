@@ -1,6 +1,6 @@
 import {core, flags, SfdxCommand} from '@salesforce/command';
 import cli from 'cli-ux';
-import * as inquirer from 'inquirer';
+// import * as inquirer from 'inquirer';
 
 // Initialize Messages with the current plugin directory
 core.Messages.importMessagesDirectory(__dirname);
@@ -12,10 +12,7 @@ const messages = core.Messages.loadMessages('rstk-sfdx-package-utils', 'rstk-pac
 export default class Manage extends SfdxCommand {
     public static description = messages.getMessage('commandDescription');
 
-    public static examples = [
-        `$ sfdx rstk:package:dependencies:manage --targetusername myOrg@example.com --targetdevhubusername devhub@org.com
-        `
-    ];
+    public static examples = [messages.getMessage('examplesDescription')];
 
     protected static flagsConfig = {
         // flag with a value (-n, --name=VALUE)
@@ -36,7 +33,7 @@ export default class Manage extends SfdxCommand {
     //     stage: flags.string({options: ['development', 'staging', 'production']})
     // };
 
-    public async run(): Promise<core.AnyJson> {
+    public async run(): Promise<any> { // tslint:disable-line:no-any
 
         // this.ux.startSpinner( messages.getMessage('commandSpinner') );
         // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
