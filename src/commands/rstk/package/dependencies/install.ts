@@ -4,6 +4,7 @@ import { JsonArray, JsonMap } from '@salesforce/ts-types';
 import * as _ from 'lodash';
 // import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
 // import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
+// import { PackageInstalledListCommand } from 'salesforce-alm/dist/commands/force/package/installed/list';
 // import { PackageInstallCommand } from 'salesforce-alm/dist/lib/package/packageInstallCommand';
 import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
