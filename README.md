@@ -17,7 +17,7 @@ $ npm install -g rstk-sfdx-package-utils
 $ sfdx COMMAND
 running command...
 $ sfdx (-v|--version|version)
-rstk-sfdx-package-utils/0.1.3 darwin-x64 node-v11.10.1
+rstk-sfdx-package-utils/0.1.4 darwin-x64 node-v11.10.1
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
@@ -30,7 +30,7 @@ USAGE
 
 ## `sfdx rstk:package:dependencies:install [-k <string>] [-b <string>] [-w <number>] [-r] [--dryrun] [-v <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
-Install dependent pclackages for a sfdx project
+Install dependent packages for a sfdx project
 
 ```
 USAGE
@@ -76,5 +76,5 @@ EXAMPLE
   $ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"
 ```
 
-_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.3/src/commands/rstk/package/dependencies/install.ts)_
+_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.4/src/commands/rstk/package/dependencies/install.ts)_
 <!-- commandsstop -->
