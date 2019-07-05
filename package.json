@@ -5,33 +5,33 @@
   "author": "John M. Daniel @ImJohnMDaniel",
   "bugs": "https://github.com/RootstockMFG/rstk-sfdx-package-utils/issues",
   "dependencies": {
-    "@oclif/command": "^1.5.13",
-    "@oclif/config": "^1.12.12",
+    "@oclif/command": "^1.5.15",
+    "@oclif/config": "^1.13.0",
     "@oclif/errors": "^1.2.2",
-    "@salesforce/command": "^1.5.1",
+    "@rauschma/stringio": "^1.4.0",
+    "@salesforce/command": "^1.5.3",
     "@salesforce/core": "^1.3.3",
-    "salesforce-alm": "^45.16.0",
-    "fs-extra": "^7.0.1",
-    "tslib": "^1.9.3",
     "child-process-promise": "^2.2.1",
     "child_process": "^1.0.2",
-    "@rauschma/stringio": "^1.4.0"
+    "fs-extra": "^7.0.1",
+    "salesforce-alm": "^45.18.0",
+    "tslib": "^1.10.0"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.22.0",
-    "@oclif/plugin-help": "^2.1.6",
+    "@oclif/plugin-help": "^2.2.0",
     "@oclif/test": "^1.2.4",
     "@salesforce/dev-config": "^1.4.4",
     "@types/chai": "^4.1.7",
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^12.0.0",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.0.12",
     "chai": "^4.2.0",
     "globby": "^9.2.0",
     "mocha": "^6.1.4",
-    "nyc": "^14.0.0",
+    "nyc": "^14.1.1",
     "sinon": "^7.3.2",
-    "ts-node": "^8.1.0",
-    "typescript": "^3.4.5"
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.2"
   },
   "engines": {
     "node": ">=8.0.0"
