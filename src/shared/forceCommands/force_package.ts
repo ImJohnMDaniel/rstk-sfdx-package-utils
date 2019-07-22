@@ -11,9 +11,6 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
     // execute the force:package:installed:list command
     const args = [];
 
-    // base command
-    // args.push('force:package:installed:list');
-
     // USERNAME argument
     args.push('--targetusername');
     args.push(`${thisOrg.getUsername()}`);
@@ -23,11 +20,11 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
 
     const intercept = require('intercept-stdout');
 
-    const logs = [];
+    // const logs = [];
 
     // tslint:disable-next-line: only-arrow-functions
     const unhookIntercept = intercept(function(text) {
-        logs.push(text);
+        // logs.push(text);
         return '';
     });
 
@@ -35,10 +32,6 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
 
     // Stop capturing stdout.
     unhookIntercept();
-
-    // process.stdout._write = originalWrite;
-
-    // console.log( installedPackageListJson );
 
     // if ( installedPackageListJson.status != 0 ) {
     //     throw Error('problems retrieving installed package list' + installedPackageListJson);

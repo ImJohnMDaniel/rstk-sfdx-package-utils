@@ -1,26 +1,12 @@
 import { core, flags, SfdxCommand } from '@salesforce/command';
-import { AnyJson, JsonArray, JsonMap } from '@salesforce/ts-types';
-// import child_process = require('child_process');
+import { JsonArray, JsonMap } from '@salesforce/ts-types';
 import * as _ from 'lodash';
-// import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
-// import { PackageVersionCreateCommand } from 'salesforce-alm/dist/commands/force/package/version/create';
-// import { PackageInstalledListCommand } from 'salesforce-alm/dist/commands/force/package/installed/list';
-// import { PackageInstallCommand } from 'salesforce-alm/dist/lib/package/packageInstallCommand';
 import { PackageInstallCommand } from 'salesforce-alm/dist/commands/force/package/install';
-
-// import fs = require('fs-extra');
 import { Constants } from '../../../../shared/constants';
 import devHubService = require('../../../../shared/devhubService');
 import forcePackageCommand = require('../../../../shared/forceCommands/force_package');
 import { PackageInstallRequest } from '../../../../types/package_install_request_result';
 import { SObjectBasedAPICallResult } from '../../../../types/sobject';
-// tslint:disable-next-line:no-var-requires
-// const { chunksToLinesAsync, chomp } = require('@rauschma/stringio');
-// tslint:disable-next-line:no-var-requires
-// const {spawn} = require('child_process');
-
-// const spawn = child_process.spawnSync;
-// const spawn = child_process.spawn;
 
 const defaultWait = 10;
 
@@ -30,31 +16,6 @@ core.Messages.importMessagesDirectory(__dirname);
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
 const messages = core.Messages.loadMessages('rstk-sfdx-package-utils', 'rstk-package-dependencies-install');
-
-// const fn = process.stdout.write;
-
-// function write() {
-//   fn.apply(process.stdout, arguments);
-//   // myLogFileStream.write.apply(myLogFileStream, arguments);
-// }
-
-// async function processStreamOutputToJSON(readable, isParsingJson: boolean, thisUx: UX) {
-//   let commandOutput = '';
-//   let chunkString = '';
-//   for await (const line of chunksToLinesAsync(readable)) {
-//     chunkString = chomp(line).trim();
-//     // if (!isParsingJson ) {
-//     thisUx.log(chunkString);
-//     // }
-//     commandOutput = commandOutput + chunkString;
-//   }
-//   // console.log(commandOutput);
-//   if (isParsingJson) {
-//     commandOutput = JSON.parse(commandOutput);
-//   }
-
-//   return commandOutput;
-// }
 
 export default class Install extends SfdxCommand {
 
@@ -79,7 +40,6 @@ export default class Install extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  // public async run(): Promise<core.AnyJson> {
   public async run(): Promise<any> { // tslint:disable-line:no-any
 
     const packagesInstalled = {};
@@ -88,8 +48,8 @@ export default class Install extends SfdxCommand {
     const packageVersionsAlreadyInstalled = await forcePackageCommand.retrievePackagesCurrentlyInstalled(this.org, this.ux);
 
     // Getting Project config
+    this.ux.startSpinner('Processing sfdx-project.json file');
     const projectJson = await this.project.retrieveSfdxProjectJson();
-    // this.ux.logJson(projectJson);
 
     // Getting a list of alias
     const packageAliases = _.get(projectJson['contents'], 'packageAliases');
@@ -98,36 +58,24 @@ export default class Install extends SfdxCommand {
     const packagesToInstall = [];
 
     const packageDirectories = _.get(projectJson['contents'], 'packageDirectories');
-    // this.ux.logJson(packageDirectories);
+    this.ux.stopSpinner();
 
-    // Object.entries(packageDirectories).forEach(async ([key, value]) => {  // using this construct causes things to execute non-synchrounously
+    this.ux.startSpinner('Analyzing dependencies to determine what needs to be installed.');
     for (let packageDirectory of packageDirectories) {
       packageDirectory = packageDirectory as JsonMap;
-      // const packageDirectory = value as JsonMap;
-      // this.ux.logJson(packageDirectory);
-      // let { package: dependencies } = packageDirectory;
+
       const dependencies = (packageDirectory.dependencies || []) as JsonArray;
 
-      // TODO: Move all labels to message
-      // this.ux.logJson(dependencies);
       if (dependencies && dependencies[0] !== undefined) {
         this.ux.log('\n' + messages.getMessage('messagePackageDependenciesFound', [packageDirectory.path.toString()]));
-        // this.ux.logJson(dependencies);
 
         for (const dependency of dependencies) {
-          // this.ux.log('Here');
-          // let packageInfo = {dependentPackage:"", versionNumber:"", packageVersionId:""};
           const packageInfo = {} as JsonMap;
 
           const { package: dependentPackage, versionNumber } = dependency as JsonMap;
           this.ux.log('');
           this.ux.log( 'dependentPackage == ' + JSON.stringify(dependentPackage) );
           packageInfo.dependentPackage = dependentPackage;
-
-          // debug info about versionNumber
-          // if (versionNumber !== 'undefined') {
-          //   this.ux.log( 'versionNumber == ' + JSON.stringify(versionNumber) );
-          // }
           packageInfo.versionNumber = versionNumber;
 
           //  if versionNumber is undefined and dependentPackage is a packageAlias, then the alias should return the package version 04t id
@@ -136,7 +84,6 @@ export default class Install extends SfdxCommand {
           const matched = aliasKeys.find(item => item === dependentPackage);
           if (matched) {
             // the dependentPackage value is a packageAlias
-            // this.ux.log(`found packageAliases[matched]: ${packageAliases[matched]}`);
             if (packageAliases[matched].startsWith(Constants.PACKAGE_VERSION_ID_PREFIX)) {
               // the dependentPackage is a packageAlias
               packageInfo.packageVersionId = packageAliases[matched];
@@ -147,7 +94,6 @@ export default class Install extends SfdxCommand {
           } else {
             // the dependentPackage value is an id
             // find the packageVersionId from the DevHub
-            // this.ux.log(`found dependentPackage: ${dependentPackage}`);
             if (JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX)) {
               packageInfo.packageVersionId = JSON.stringify(dependentPackage);
             } else if (JSON.stringify(dependentPackage).startsWith(Constants.PACKAGE_VERSION_ID_PREFIX)) {
@@ -163,11 +109,12 @@ export default class Install extends SfdxCommand {
         this.ux.log('\n' + messages.getMessage('messageNoDependenciesFound', [packageDirectory.path.toString()]));
       }
     }
-    // }
+    this.ux.stopSpinner();
+
     this.ux.log('\n');
 
     if (packagesToInstall.length > 0) { // Installing Packages
-
+      this.ux.startSpinner('Installing packages....');
       // Getting Installation Key(s)
       let installationKeys = this.flags.installationkeys;
       if (installationKeys) {
@@ -189,19 +136,11 @@ export default class Install extends SfdxCommand {
 
       this.ux.log('Beginning installs of packages...');
 
-      // const firstJsonPart = '{ "result": { "packagesInstalled": {' as unknown as JSON;
-
-      // this.ux.logJson(firstJsonPart);
-
       let i = 0;
       for (let packageInfo of packagesToInstall) {
         packageInfo = packageInfo as JsonMap;
 
         // Check to see if this package version has already been installed in the org.
-        // this.ux.log('THE BLUE BEGINS_______________________________________________________________')
-        // console.log(packageVersionsAlreadyInstalled);
-        // console.log(packageInfo.packageVersionId);
-        // this.ux.log('THE BLUE ENDS_________________________________________________________________')
         const matchedAlreadyInstalled = packageVersionsAlreadyInstalled === undefined ? false : packageVersionsAlreadyInstalled.find(item => item.SubscriberPackageVersionId === packageInfo.packageVersionId);
 
         if (matchedAlreadyInstalled) {
@@ -224,12 +163,8 @@ export default class Install extends SfdxCommand {
           continue;
         }
 
-        // Split arguments to use spawn
+        // Split arguments to be used by the OCLIF command -- PackageInstallCommand
         const args = [];
-        // args.push('sfdx');
-        // if (!this.flags.inprocesscommandexecution) {
-        //   args.push('force:package:install');
-        // }
 
         // USERNAME
         args.push('--targetusername');
@@ -271,49 +206,34 @@ export default class Install extends SfdxCommand {
 
           let installationResultJson;
 
-          // const intercept = require('intercept-stdout');
-          let intercept;
-
           if (this.flags.json) {
-            // let capturedText = '';
             // let capturedText = {} as AnyJson;
-            intercept = require('intercept-stdout');
+            const intercept = require('intercept-stdout');
 
+            // setup the intercept function to silence the output of PackageInstallCommand call
             // tslint:disable-next-line: only-arrow-functions
             const unhookIntercept = intercept(function(text) {
-              // logs.push(text);
-              capturedText = text;
+              // In a "--json" scenario, the output does not need to be captured.  It just needs to be silenced.
+              // capturedText = text;
               return '';
             });
 
             installationResultJson = await PackageInstallCommand.run(args);
 
+            // reactivate the output to console.
             unhookIntercept();
-            // console.log('after unhookIntercept');
-            // console.log('____________________________________________________________');
-            // console.log(capturedText);
-            // console.log('____________________________________________________________');
 
-            // console.log( installationResultJson );
             if (installationResultJson === undefined || installationResultJson.Status !== 'SUCCESS') {
               throw Error('Problems installing the package ' + packageInfo.packageVersionId);
             }
 
             if (installationResultJson !== undefined && this.flags.json) {
-              // if ( sfdxCommandReturn.stdout ) {
-              //  packageInfo.installationResult = JSON.parse(sfdxCommandReturn.stdout.toString()).result;
-              // }
               packageInfo.installationResult = installationResultJson;
             }
           } else {
             // non JSON route
             installationResultJson = await PackageInstallCommand.run(args) as SObjectBasedAPICallResult<PackageInstallRequest>;
 
-            // console.log('____________________________________________________________');
-            // console.log( installationResultJson );
-            // console.log('____________________________________________________________');
-            // console.log( installationResultJson.Status );
-            // console.log('____________________________________________________________');
             if (installationResultJson === undefined || installationResultJson.Status !== 'SUCCESS') {
               throw Error('Problems installing the package ' + packageInfo.packageVersionId);
             }
@@ -324,7 +244,7 @@ export default class Install extends SfdxCommand {
         }
         i++;
       } // end of For Loop
-
+      this.ux.stopSpinner();
     } // end of If condition to check if packagesToInstall.length > 0
 
     return { packagesInstalled, packagesNotInstalled };
