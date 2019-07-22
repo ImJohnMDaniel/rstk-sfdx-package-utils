@@ -1,0 +1,39 @@
+{
+  "status": 0,
+  "result": {
+    "packagesInstalled": {
+      "04t1O000001RxfyQAC": {
+        "dependentPackage": "rstk-sfdx-ref-apex-mocks@0.1.0-1-sfdx-ref",
+        "packageVersionId": "04t1O000001RxfyQAC",
+        "installationResult": {
+          "status": 0,
+          "result": {
+            "attributes": {
+              "type": "PackageInstallRequest",
+              "url": "/services/data/v46.0/tooling/sobjects/PackageInstallRequest/0Hf2a0000004GoACAU"
+            },
+            "Id": "0Hf2a0000004GoACAU",
+            "IsDeleted": false,
+            "CreatedDate": "2019-06-17T15:52:24.000+0000",
+            "CreatedById": "0052a000001jRgaAAE",
+            "LastModifiedDate": "2019-06-17T15:52:24.000+0000",
+            "LastModifiedById": "0052a000001jRgaAAE",
+            "SystemModstamp": "2019-06-17T15:52:24.000+0000",
+            "SubscriberPackageVersionKey": "04t1O000001RxfyQAC",
+            "NameConflictResolution": "Block",
+            "SecurityType": "Full",
+            "PackageInstallSource": "U",
+            "ProfileMappings": null,
+            "Password": null,
+            "EnableRss": false,
+            "UpgradeType": null,
+            "ApexCompileType": null,
+            "Status": "SUCCESS",
+            "Errors": null
+          }
+        }
+      }
+    },
+    "packagesNotInstalled": {}
+  }
+}
