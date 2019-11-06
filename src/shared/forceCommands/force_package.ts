@@ -18,6 +18,10 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
     // have the output returned as JSON
     args.push('--json');
 
+    // up the log level
+    args.push('--loglevel');
+    args.push('debug');
+
     const intercept = require('intercept-stdout');
 
     // const logs = [];
@@ -28,10 +32,19 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
         return '';
     });
 
-    const installedPackageListJson = await PackageInstalledListCommand.run( args );
+    let installedPackageListJson = await PackageInstalledListCommand.run( args );
+
+    if ( installedPackageListJson === undefined || installedPackageListJson.status !== 0 ) {
+        installedPackageListJson = await PackageInstalledListCommand.run( args );
+    }
 
     // Stop capturing stdout.
     unhookIntercept();
+
+    // thisUx.log('log');
+    // thisUx.log(installedPackageListJson);
+    // thisUx.error('error');
+    // thisUx.error(installedPackageListJson);
 
     // if ( installedPackageListJson.status != 0 ) {
     //     throw Error('problems retrieving installed package list' + installedPackageListJson);
@@ -39,5 +52,6 @@ export async function retrievePackagesCurrentlyInstalled( thisOrg: Org, thisUx: 
 
     thisUx.stopSpinner();
 
+//    thisUx.logJson(installedPackageListJson);
     return installedPackageListJson as PackageVersion[];
 }
