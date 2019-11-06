@@ -53,7 +53,7 @@ export default class Install extends SfdxCommand {
 
     // Getting a list of alias
     const packageAliases = _.get(projectJson['contents'], 'packageAliases');
-    const aliasKeys = Object.keys(packageAliases);
+    const aliasKeys = packageAliases == null ? [] : Object.keys(packageAliases);
 
     const packagesToInstall = [];
 
