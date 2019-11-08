@@ -53,7 +53,10 @@ export default class Install extends SfdxCommand {
     branch: flags.string({ char: 'b', required: false, description: messages.getMessage('flagBranchDescription') }),
     wait: flags.number({ char: 'w', required: false, description: messages.getMessage('flagWaitDescription') }),
     prompt: flags.boolean({ char: 'p', default: false, required: false, description: messages.getMessage('flagPromptDescription') }),
-    dryrun: flags.boolean({ required: false, description: messages.getMessage('flagDryrunDescription') })
+    dryrun: flags.boolean({ required: false, description: messages.getMessage('flagDryrunDescription') }),
+    securitytype: flags.enum({ char: 's', default: 'AdminsOnly', required: false, description: 'security access type for the installed package', options: ['AllUsers', 'AdminsOnly']
+    })
+    
   };
 
   // Comment this out if your command does not require an org username
@@ -211,6 +214,12 @@ export default class Install extends SfdxCommand {
         args.push(`${wait}`);
         args.push('--publishwait');
         args.push(`${wait}`);
+
+        // SECURITYTYPE
+        if (this.flags.securitytype) {
+          args.push('--securitytype')
+          args.push(`${this.flags.securitytype}`)
+        }
 
         // PROMPT
         if (!this.flags.prompt) {
