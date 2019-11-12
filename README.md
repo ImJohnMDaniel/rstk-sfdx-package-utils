@@ -6,24 +6,32 @@ Utilities to better manage SalesforceDX Packages
 # Contents
 <!-- toc -->
 * [Contents](#contents)
-* [Usage](#usage)
+* [Setup](#setup)
 * [Commands](#commands)
 <!-- tocstop -->
 
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g rstk-sfdx-package-utils
-$ sfdx COMMAND
-running command...
-$ sfdx (-v|--version|version)
-rstk-sfdx-package-utils/0.1.9 darwin-x64 node-v11.10.1
-$ sfdx --help [COMMAND]
-USAGE
-  $ sfdx COMMAND
-...
+# Setup
+### **Install as a SalesforceDX Plugin**
+
+```  
+sfdx plugins:install rstk-sfdx-package-utils
 ```
-<!-- usagestop -->
+You will be prompted to confirm that you want to install an unsigned plugin. Choose "yes"
+```  
+This plugin is not digitally signed and its authenticity cannot be verified. Continue installation y/n?: y
+```
+
+To whitelist this plugin, [add an entry for it in $HOME/.config/sfdx/unsignedPluginWhiteList.json](https://developer.salesforce.com/blogs/2017/10/salesforce-dx-cli-plugin-update.html).
+
+### **Install from source**
+1. Clone the repository
+```  
+git clone https://github.com/rootstockmfg/rstk-sfdx-package-utils.git
+```
+2. Link the plugin:
+```
+sfdx plugins:link rstk-sfdx-package-utils
+```
 # Commands
 <!-- commands -->
 * [`sfdx rstk:package:dependencies:install [-k <string>] [-b <string>] [-w <number>] [-p] [--dryrun] [-s AllUsers|AdminsOnly] [-v <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-rstkpackagedependenciesinstall--k-string--b-string--w-number--p---dryrun--s-allusersadminsonly--v-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -79,5 +87,5 @@ EXAMPLE
   $ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"
 ```
 
-_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.9/src/commands/rstk/package/dependencies/install.ts)_
+_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.11/src/commands/rstk/package/dependencies/install.ts)_
 <!-- commandsstop -->
