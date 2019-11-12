@@ -10,7 +10,7 @@ Utilities to better manage SalesforceDX Packages
 * [Commands](#commands)
 <!-- tocstop -->
 
-## Setup
+# Setup
 ### **Install as a SalesforceDX Plugin**
 
 ```  
@@ -87,5 +87,5 @@ EXAMPLE
   $ rstk:package:dependencies:install -u MyScratchOrg -v MyDevHub -k "1:MyPackage1Key 2: 3:MyPackage3Key" -b "DEV"
 ```
 
-_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.9/src/commands/rstk/package/dependencies/install.ts)_
+_See code: [src/commands/rstk/package/dependencies/install.ts](https://github.com/RootstockMFG/rstk-sfdx-package-utils/blob/v0.1.11/src/commands/rstk/package/dependencies/install.ts)_
 <!-- commandsstop -->

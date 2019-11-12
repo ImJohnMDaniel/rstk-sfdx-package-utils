@@ -1,7 +1,7 @@
 {
   "name": "rstk-sfdx-package-utils",
   "description": "Utilities to better manage SalesforceDX Packages",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "author": "John M. Daniel @ImJohnMDaniel",
   "bugs": "https://github.com/RootstockMFG/rstk-sfdx-package-utils/issues",
   "dependencies": {
